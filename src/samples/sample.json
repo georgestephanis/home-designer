@@ -1,0 +1,2019 @@
+{
+ "app": "home-designer",
+ "version": 1,
+ "name": "Sample house",
+ "wall": 1.0,
+ "levels": [
+  {
+   "id": "basement",
+   "title": "Basement",
+   "objects": [
+    {
+     "id": "basement-room-1",
+     "type": "room",
+     "kind": "room",
+     "label": "Garage",
+     "points": [
+      [
+       -23.0,
+       0
+      ],
+      [
+       -1.75,
+       0
+      ],
+      [
+       -1.75,
+       22
+      ],
+      [
+       -23.0,
+       22
+      ]
+     ]
+    },
+    {
+     "id": "basement-room-2",
+     "type": "room",
+     "kind": "room",
+     "label": "Laundry",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       21.5833,
+       0
+      ],
+      [
+       21.5833,
+       14.3333
+      ],
+      [
+       0,
+       14.3333
+      ]
+     ]
+    },
+    {
+     "id": "basement-room-3",
+     "type": "room",
+     "kind": "stairs",
+     "label": "Stairs ↑",
+     "points": [
+      [
+       0,
+       14.75
+      ],
+      [
+       3.5,
+       14.75
+      ],
+      [
+       3.5,
+       26.5
+      ],
+      [
+       0,
+       26.5
+      ]
+     ]
+    },
+    {
+     "id": "basement-room-4",
+     "type": "room",
+     "kind": "wet",
+     "label": "½ bath",
+     "points": [
+      [
+       0,
+       26.5
+      ],
+      [
+       3.5,
+       26.5
+      ],
+      [
+       3.5,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "basement-room-5",
+     "type": "room",
+     "kind": "room",
+     "label": "Utility",
+     "points": [
+      [
+       3.5,
+       14.75
+      ],
+      [
+       21.5833,
+       14.75
+      ],
+      [
+       21.5833,
+       30
+      ],
+      [
+       3.5,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "basement-room-6",
+     "type": "room",
+     "kind": "room",
+     "label": "Workshop",
+     "points": [
+      [
+       0,
+       30.4167
+      ],
+      [
+       12.5,
+       30.4167
+      ],
+      [
+       12.5,
+       47.9167
+      ],
+      [
+       0,
+       47.9167
+      ]
+     ]
+    },
+    {
+     "id": "basement-mark-7",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      4.5,
+      30
+     ],
+     "b": [
+      7.1667,
+      30
+     ]
+    },
+    {
+     "id": "basement-mark-8",
+     "type": "mark",
+     "kind": "garage",
+     "label": "Garage door (9′)",
+     "a": [
+      -22.0,
+      22
+     ],
+     "b": [
+      -13.0,
+      22
+     ]
+    },
+    {
+     "id": "basement-mark-9",
+     "type": "mark",
+     "kind": "blocked",
+     "label": "Blocked bay + door (9′)",
+     "a": [
+      -11.0,
+      22
+     ],
+     "b": [
+      -2.0,
+      22
+     ]
+    },
+    {
+     "id": "basement-mark-10",
+     "type": "mark",
+     "kind": "door",
+     "label": "Outside door",
+     "a": [
+      8.1667,
+      47.9167
+     ],
+     "b": [
+      11.1667,
+      47.9167
+     ]
+    },
+    {
+     "id": "basement-item-11",
+     "type": "item",
+     "kind": "stone",
+     "shape": "rect",
+     "label": "",
+     "cx": -0.875,
+     "cy": 23.9583,
+     "w": 1.75,
+     "h": 49.9167,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-item-12",
+     "type": "item",
+     "kind": "baseboard",
+     "shape": "rect",
+     "label": "",
+     "cx": 0.275,
+     "cy": 34.6167,
+     "w": 0.35,
+     "h": 8.0,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-item-13",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Dryer",
+     "cx": 1.45,
+     "cy": 4.8167,
+     "w": 2.5,
+     "h": 2.5,
+     "rot": 0.0,
+     "glyph": "washer"
+    },
+    {
+     "id": "basement-item-14",
+     "type": "item",
+     "kind": "fixture",
+     "shape": "rect",
+     "label": "Sink",
+     "cx": 1.1,
+     "cy": 7.1667,
+     "w": 1.8,
+     "h": 1.8,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-item-15",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Washer",
+     "cx": 1.45,
+     "cy": 9.5167,
+     "w": 2.5,
+     "h": 2.5,
+     "rot": 0.0,
+     "glyph": "washer"
+    },
+    {
+     "id": "basement-item-16",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Freezer",
+     "cx": 9.3417,
+     "cy": 1.4,
+     "w": 2.5,
+     "h": 2.4,
+     "rot": 0.0,
+     "glyph": "fridge"
+    },
+    {
+     "id": "basement-item-17",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Freezer",
+     "cx": 12.2417,
+     "cy": 1.4,
+     "w": 2.5,
+     "h": 2.4,
+     "rot": 0.0,
+     "glyph": "fridge"
+    },
+    {
+     "id": "basement-item-18",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Shelving",
+     "cx": 8.8833,
+     "cy": 28.35,
+     "w": 2.0,
+     "h": 2.7,
+     "rot": 0.0,
+     "glyph": "drawers"
+    },
+    {
+     "id": "basement-item-19",
+     "type": "item",
+     "kind": "fixture",
+     "shape": "rect",
+     "label": "Furnace",
+     "cx": 17.6833,
+     "cy": 16.65,
+     "w": 3.2,
+     "h": 3.4,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-item-20",
+     "type": "item",
+     "kind": "fixture",
+     "shape": "rect",
+     "label": "Water heater",
+     "cx": 14.4333,
+     "cy": 16.5,
+     "w": 2.3,
+     "h": 2.5,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-mark-21",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      0,
+      37.75
+     ],
+     "b": [
+      0,
+      40.5833
+     ]
+    },
+    {
+     "id": "basement-mark-22",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      12.5,
+      42.0
+     ],
+     "b": [
+      12.5,
+      44.8333
+     ]
+    },
+    {
+     "id": "basement-mark-23",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      14.75,
+      30
+     ],
+     "b": [
+      17.5833,
+      30
+     ]
+    },
+    {
+     "id": "basement-item-24",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "",
+     "cx": 1.5,
+     "cy": 46.9167,
+     "w": 3.0,
+     "h": 2.0,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-item-25",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "",
+     "cx": 20.5833,
+     "cy": 16.25,
+     "w": 2.0,
+     "h": 3.0,
+     "rot": 0.0
+    },
+    {
+     "id": "basement-point-26",
+     "type": "point",
+     "kind": "ap",
+     "label": "Wi-Fi AP",
+     "x": 12.05,
+     "y": 46.9167
+    },
+    {
+     "id": "basement-point-27",
+     "type": "point",
+     "kind": "thermo",
+     "label": "Thermostat",
+     "x": 7.7667,
+     "y": 30.8167
+    }
+   ]
+  },
+  {
+   "id": "floor1",
+   "title": "First floor",
+   "objects": [
+    {
+     "id": "floor1-room-1",
+     "type": "room",
+     "kind": "room",
+     "label": "Living room",
+     "points": [
+      [
+       -23.0,
+       0
+      ],
+      [
+       -1.0,
+       0
+      ],
+      [
+       -1.0,
+       22
+      ],
+      [
+       -23.0,
+       22
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-2",
+     "type": "room",
+     "kind": "hall",
+     "label": "",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       7.1667,
+       0
+      ],
+      [
+       7.1667,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-3",
+     "type": "room",
+     "kind": "labelonly",
+     "label": "Entry hall",
+     "points": [
+      [
+       0,
+       1
+      ],
+      [
+       7.1667,
+       1
+      ],
+      [
+       7.1667,
+       14
+      ],
+      [
+       0,
+       14
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-4",
+     "type": "room",
+     "kind": "stairs",
+     "label": "Stairs ↑",
+     "points": [
+      [
+       0,
+       14
+      ],
+      [
+       3.5,
+       14
+      ],
+      [
+       3.5,
+       24
+      ],
+      [
+       0,
+       24
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-5",
+     "type": "room",
+     "kind": "stairs",
+     "label": "↓ bsmt",
+     "points": [
+      [
+       0,
+       24
+      ],
+      [
+       3.5,
+       24
+      ],
+      [
+       3.5,
+       26.5
+      ],
+      [
+       0,
+       26.5
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-6",
+     "type": "room",
+     "kind": "wet",
+     "label": "½ bath",
+     "points": [
+      [
+       0,
+       26.5
+      ],
+      [
+       3.5,
+       26.5
+      ],
+      [
+       3.5,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-7",
+     "type": "room",
+     "kind": "room",
+     "label": "Study",
+     "points": [
+      [
+       7.5833,
+       0
+      ],
+      [
+       21.5833,
+       0
+      ],
+      [
+       21.5833,
+       30
+      ],
+      [
+       7.5833,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-8",
+     "type": "room",
+     "kind": "room",
+     "label": "Sunroom",
+     "points": [
+      [
+       22.5833,
+       9.25
+      ],
+      [
+       33.25,
+       9.25
+      ],
+      [
+       33.25,
+       19.9167
+      ],
+      [
+       22.5833,
+       19.9167
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-9",
+     "type": "room",
+     "kind": "room",
+     "label": "Kitchen",
+     "points": [
+      [
+       0,
+       30.4167
+      ],
+      [
+       12.5,
+       30.4167
+      ],
+      [
+       12.5,
+       47.9167
+      ],
+      [
+       0,
+       47.9167
+      ]
+     ]
+    },
+    {
+     "id": "floor1-room-10",
+     "type": "room",
+     "kind": "outside",
+     "label": "Deck",
+     "points": [
+      [
+       13.5,
+       33.4167
+      ],
+      [
+       20.5,
+       33.4167
+      ],
+      [
+       20.5,
+       45.9167
+      ],
+      [
+       13.5,
+       45.9167
+      ]
+     ]
+    },
+    {
+     "id": "floor1-mark-11",
+     "type": "mark",
+     "kind": "door",
+     "label": "Front door",
+     "a": [
+      2.5,
+      0
+     ],
+     "b": [
+      6.5,
+      0
+     ]
+    },
+    {
+     "id": "floor1-mark-12",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      3.9,
+      30.4167
+     ],
+     "b": [
+      6.7667,
+      30.4167
+     ]
+    },
+    {
+     "id": "floor1-point-13",
+     "type": "point",
+     "kind": "device",
+     "label": "Light",
+     "x": 3.5833,
+     "y": 3.5
+    },
+    {
+     "id": "floor1-mark-14",
+     "type": "mark",
+     "kind": "opening",
+     "label": "2 steps up",
+     "a": [
+      0,
+      6.6667
+     ],
+     "b": [
+      0,
+      9.5
+     ]
+    },
+    {
+     "id": "floor1-mark-15",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      7.5833,
+      10.1667
+     ],
+     "b": [
+      7.5833,
+      13.6667
+     ]
+    },
+    {
+     "id": "floor1-mark-16",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      21.5833,
+      10
+     ],
+     "b": [
+      21.5833,
+      12.8333
+     ]
+    },
+    {
+     "id": "floor1-mark-17",
+     "type": "mark",
+     "kind": "door",
+     "label": "",
+     "a": [
+      12.5,
+      35.4167
+     ],
+     "b": [
+      12.5,
+      38.4167
+     ]
+    },
+    {
+     "id": "floor1-mark-18",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      0,
+      37.75
+     ],
+     "b": [
+      0,
+      40.5833
+     ]
+    },
+    {
+     "id": "floor1-mark-19",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      6,
+      47.9167
+     ],
+     "b": [
+      8,
+      47.9167
+     ]
+    },
+    {
+     "id": "floor1-mark-20",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      12.5,
+      42.0
+     ],
+     "b": [
+      12.5,
+      44.8333
+     ]
+    },
+    {
+     "id": "floor1-item-21",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Fridge",
+     "cx": 2.0,
+     "cy": 32.4167,
+     "w": 3.0,
+     "h": 3.0,
+     "rot": 0.0,
+     "glyph": "fridge"
+    },
+    {
+     "id": "floor1-item-22",
+     "type": "item",
+     "kind": "fixture",
+     "shape": "rect",
+     "label": "Counter",
+     "cx": 8.0,
+     "cy": 46.4167,
+     "w": 8.0,
+     "h": 2.0,
+     "rot": 0.0
+    },
+    {
+     "id": "floor1-item-23",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Work desk",
+     "cx": 20.1833,
+     "cy": 26.85,
+     "w": 2.2,
+     "h": 5.7,
+     "rot": 0.0,
+     "glyph": "desk"
+    },
+    {
+     "id": "floor1-item-24",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Craft desk",
+     "cx": 10.4833,
+     "cy": 28.6,
+     "w": 5.2,
+     "h": 2.2,
+     "rot": 0.0,
+     "glyph": "desk"
+    },
+    {
+     "id": "floor1-item-25",
+     "type": "item",
+     "kind": "fixture",
+     "shape": "rect",
+     "label": "Pet enclosure",
+     "cx": 17.4167,
+     "cy": 19.0833,
+     "w": 2.3333,
+     "h": 5.8333,
+     "rot": 0.0
+    },
+    {
+     "id": "floor1-mark-26",
+     "type": "mark",
+     "kind": "window",
+     "label": "Picture window",
+     "a": [
+      -17.0,
+      0
+     ],
+     "b": [
+      -9.0,
+      0
+     ]
+    },
+    {
+     "id": "floor1-mark-27",
+     "type": "mark",
+     "kind": "door",
+     "label": "Side door",
+     "a": [
+      -22.2,
+      0
+     ],
+     "b": [
+      -19.5,
+      0
+     ]
+    },
+    {
+     "id": "floor1-mark-28",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      -18.9167,
+      22
+     ],
+     "b": [
+      -16.0833,
+      22
+     ]
+    },
+    {
+     "id": "floor1-mark-29",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      -8.9167,
+      22
+     ],
+     "b": [
+      -6.0833,
+      22
+     ]
+    },
+    {
+     "id": "floor1-mark-30",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      9.6667,
+      0
+     ],
+     "b": [
+      12.5,
+      0
+     ]
+    },
+    {
+     "id": "floor1-mark-31",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      16.1667,
+      0
+     ],
+     "b": [
+      19.0,
+      0
+     ]
+    },
+    {
+     "id": "floor1-mark-32",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      21.5833,
+      3.0833
+     ],
+     "b": [
+      21.5833,
+      5.9167
+     ]
+    },
+    {
+     "id": "floor1-mark-33",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      21.5833,
+      24.1667
+     ],
+     "b": [
+      21.5833,
+      27
+     ]
+    },
+    {
+     "id": "floor1-mark-34",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      14.75,
+      30
+     ],
+     "b": [
+      17.5833,
+      30
+     ]
+    },
+    {
+     "id": "floor1-mark-35",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      33.25,
+      10.25
+     ],
+     "b": [
+      33.25,
+      18.9167
+     ]
+    },
+    {
+     "id": "floor1-mark-36",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      23.5833,
+      9.25
+     ],
+     "b": [
+      32.25,
+      9.25
+     ]
+    },
+    {
+     "id": "floor1-mark-37",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      23.5833,
+      19.9167
+     ],
+     "b": [
+      32.25,
+      19.9167
+     ]
+    },
+    {
+     "id": "floor1-mark-38",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      8.5,
+      47.9167
+     ],
+     "b": [
+      10.5,
+      47.9167
+     ]
+    },
+    {
+     "id": "floor1-item-39",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "",
+     "cx": 1.5,
+     "cy": 46.9167,
+     "w": 3.0,
+     "h": 2.0,
+     "rot": 0.0
+    },
+    {
+     "id": "floor1-item-40",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "Fireplace",
+     "cx": 20.5833,
+     "cy": 16.7083,
+     "w": 2.0,
+     "h": 6.75,
+     "rot": 0.0
+    },
+    {
+     "id": "floor1-point-41",
+     "type": "point",
+     "kind": "ap",
+     "label": "Wi-Fi AP",
+     "x": 6.7167,
+     "y": 20.1667
+    },
+    {
+     "id": "floor1-point-42",
+     "type": "point",
+     "kind": "ap",
+     "label": "Wi-Fi AP",
+     "x": -22.55,
+     "y": 11.0
+    },
+    {
+     "id": "floor1-item-43",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "",
+     "cx": -3.5,
+     "cy": 11.0,
+     "w": 0.5,
+     "h": 0.5,
+     "rot": 0.0
+    },
+    {
+     "id": "floor1-point-44",
+     "type": "point",
+     "kind": "thermo",
+     "label": "Thermostat",
+     "x": -3.5,
+     "y": 11.7
+    },
+    {
+     "id": "floor1-point-45",
+     "type": "point",
+     "kind": "thermo",
+     "label": "Thermostat",
+     "x": 7.9833,
+     "y": 9.5667
+    },
+    {
+     "id": "floor1-point-46",
+     "type": "point",
+     "kind": "sensor",
+     "label": "Presence sensor",
+     "x": 18.5833,
+     "y": 29.7,
+     "aim": -100.0,
+     "range": 6
+    }
+   ]
+  },
+  {
+   "id": "floor2",
+   "title": "Second floor",
+   "objects": [
+    {
+     "id": "floor2-room-1",
+     "type": "room",
+     "kind": "room",
+     "label": "Bedroom 2",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       8.1667,
+       0
+      ],
+      [
+       8.1667,
+       10.6667
+      ],
+      [
+       0,
+       10.6667
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-2",
+     "type": "room",
+     "kind": "room",
+     "label": "Main bedroom",
+     "points": [
+      [
+       8.5833,
+       0
+      ],
+      [
+       21.5833,
+       0
+      ],
+      [
+       21.5833,
+       14
+      ],
+      [
+       8.5833,
+       14
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-3",
+     "type": "room",
+     "kind": "room",
+     "label": "Bedroom 3",
+     "points": [
+      [
+       7.5833,
+       14.4167
+      ],
+      [
+       21.5833,
+       14.4167
+      ],
+      [
+       21.5833,
+       30
+      ],
+      [
+       7.5833,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-4",
+     "type": "room",
+     "kind": "closet",
+     "label": "Closet",
+     "points": [
+      [
+       19.25,
+       6.6667
+      ],
+      [
+       21.5833,
+       6.6667
+      ],
+      [
+       21.5833,
+       14
+      ],
+      [
+       19.25,
+       14
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-5",
+     "type": "room",
+     "kind": "hall",
+     "label": "",
+     "points": [
+      [
+       0,
+       11.0833
+      ],
+      [
+       8.1667,
+       11.0833
+      ],
+      [
+       8.1667,
+       14
+      ],
+      [
+       7.1667,
+       14
+      ],
+      [
+       7.1667,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-6",
+     "type": "room",
+     "kind": "labelonly",
+     "label": "Hall",
+     "points": [
+      [
+       3.5,
+       11.0833
+      ],
+      [
+       7.1667,
+       11.0833
+      ],
+      [
+       7.1667,
+       17
+      ],
+      [
+       3.5,
+       17
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-7",
+     "type": "room",
+     "kind": "closet",
+     "label": "Linen",
+     "points": [
+      [
+       0,
+       11.0833
+      ],
+      [
+       3.5,
+       11.0833
+      ],
+      [
+       3.5,
+       13.4167
+      ],
+      [
+       0,
+       13.4167
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-8",
+     "type": "room",
+     "kind": "closet",
+     "label": "Attic stair",
+     "points": [
+      [
+       0,
+       13.4167
+      ],
+      [
+       3.5,
+       13.4167
+      ],
+      [
+       3.5,
+       16.4167
+      ],
+      [
+       0,
+       16.4167
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-9",
+     "type": "room",
+     "kind": "stairs",
+     "label": "Stairs ↓",
+     "points": [
+      [
+       0,
+       16.4167
+      ],
+      [
+       3.5,
+       16.4167
+      ],
+      [
+       3.5,
+       24
+      ],
+      [
+       0,
+       24
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-10",
+     "type": "room",
+     "kind": "labelonly",
+     "label": "Platform",
+     "points": [
+      [
+       0,
+       24
+      ],
+      [
+       7.1667,
+       24
+      ],
+      [
+       7.1667,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-11",
+     "type": "room",
+     "kind": "closet",
+     "label": "WIC",
+     "points": [
+      [
+       0,
+       30.4167
+      ],
+      [
+       3,
+       30.4167
+      ],
+      [
+       3,
+       36.0833
+      ],
+      [
+       0,
+       36.0833
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-12",
+     "type": "room",
+     "kind": "hall",
+     "label": "",
+     "points": [
+      [
+       3,
+       30.4167
+      ],
+      [
+       6.5,
+       30.4167
+      ],
+      [
+       6.5,
+       36.0833
+      ],
+      [
+       3,
+       36.0833
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-13",
+     "type": "room",
+     "kind": "closet",
+     "label": "WIC",
+     "points": [
+      [
+       6.5,
+       30.4167
+      ],
+      [
+       12.5,
+       30.4167
+      ],
+      [
+       12.5,
+       36.0833
+      ],
+      [
+       6.5,
+       36.0833
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-14",
+     "type": "room",
+     "kind": "wet",
+     "label": "Bathroom",
+     "points": [
+      [
+       0,
+       36.5
+      ],
+      [
+       12.5,
+       36.5
+      ],
+      [
+       12.5,
+       47.5
+      ],
+      [
+       0,
+       47.5
+      ]
+     ]
+    },
+    {
+     "id": "floor2-room-15",
+     "type": "room",
+     "kind": "attic",
+     "label": "Living room attic",
+     "points": [
+      [
+       -23.0,
+       0
+      ],
+      [
+       -1.0,
+       0
+      ],
+      [
+       -1.0,
+       22
+      ],
+      [
+       -23.0,
+       22
+      ]
+     ]
+    },
+    {
+     "id": "floor2-mark-16",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      4.0,
+      10.6667
+     ],
+     "b": [
+      6.6667,
+      10.6667
+     ]
+    },
+    {
+     "id": "floor2-mark-17",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      8.5833,
+      11.3833
+     ],
+     "b": [
+      8.5833,
+      13.7
+     ]
+    },
+    {
+     "id": "floor2-item-18",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "King bed",
+     "cx": 11.9167,
+     "cy": 5.3333,
+     "w": 6.6667,
+     "h": 6.3333,
+     "rot": 0.0,
+     "glyph": "bed"
+    },
+    {
+     "id": "floor2-item-19",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Loft bed",
+     "cx": 5.0417,
+     "cy": 1.625,
+     "w": 6.25,
+     "h": 3.25,
+     "rot": 0.0,
+     "glyph": "bed"
+    },
+    {
+     "id": "floor2-mark-20",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      7.5833,
+      15.4167
+     ],
+     "b": [
+      7.5833,
+      17.9167
+     ]
+    },
+    {
+     "id": "floor2-item-21",
+     "type": "item",
+     "kind": "furniture",
+     "shape": "rect",
+     "label": "Loft bed",
+     "cx": 9.2083,
+     "cy": 23.9583,
+     "w": 3.25,
+     "h": 6.25,
+     "rot": 0.0,
+     "glyph": "bed"
+    },
+    {
+     "id": "floor2-mark-22",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      3.5,
+      11.3333
+     ],
+     "b": [
+      3.5,
+      13.1667
+     ]
+    },
+    {
+     "id": "floor2-mark-23",
+     "type": "mark",
+     "kind": "opening",
+     "label": "shelves",
+     "a": [
+      19.25,
+      6.8667
+     ],
+     "b": [
+      19.25,
+      9.0667
+     ]
+    },
+    {
+     "id": "floor2-mark-24",
+     "type": "mark",
+     "kind": "slider",
+     "label": "sliders",
+     "a": [
+      19.25,
+      9.3667
+     ],
+     "b": [
+      19.25,
+      13.8
+     ]
+    },
+    {
+     "id": "floor2-mark-25",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      3.5,
+      13.6667
+     ],
+     "b": [
+      3.5,
+      16.1667
+     ]
+    },
+    {
+     "id": "floor2-mark-26",
+     "type": "mark",
+     "kind": "step",
+     "label": "steps up",
+     "a": [
+      3.5,
+      24
+     ],
+     "b": [
+      7.1667,
+      24
+     ]
+    },
+    {
+     "id": "floor2-point-27",
+     "type": "point",
+     "kind": "device",
+     "label": "Light",
+     "x": 5.3,
+     "y": 12.6833
+    },
+    {
+     "id": "floor2-point-28",
+     "type": "point",
+     "kind": "device",
+     "label": "Smoke detector",
+     "x": 5.3,
+     "y": 15.2
+    },
+    {
+     "id": "floor2-mark-29",
+     "type": "mark",
+     "kind": "opening",
+     "label": "2 steps up",
+     "a": [
+      3,
+      30.4167
+     ],
+     "b": [
+      6.5,
+      30.4167
+     ]
+    },
+    {
+     "id": "floor2-mark-30",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      0,
+      31.8
+     ],
+     "b": [
+      0,
+      34.6333
+     ]
+    },
+    {
+     "id": "floor2-mark-31",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      0,
+      37.75
+     ],
+     "b": [
+      0,
+      40.5833
+     ]
+    },
+    {
+     "id": "floor2-mark-32",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      12.5,
+      42.0
+     ],
+     "b": [
+      12.5,
+      44.8333
+     ]
+    },
+    {
+     "id": "floor2-item-33",
+     "type": "item",
+     "kind": "fixture",
+     "shape": "rect",
+     "label": "",
+     "cx": 9.25,
+     "cy": 45.75,
+     "w": 5.5,
+     "h": 2.5,
+     "rot": 0.0
+    },
+    {
+     "id": "floor2-mark-34",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      3.0833,
+      0
+     ],
+     "b": [
+      5.9167,
+      0
+     ]
+    },
+    {
+     "id": "floor2-mark-35",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      9.6667,
+      0
+     ],
+     "b": [
+      12.5,
+      0
+     ]
+    },
+    {
+     "id": "floor2-mark-36",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      16.1667,
+      0
+     ],
+     "b": [
+      19.0,
+      0
+     ]
+    },
+    {
+     "id": "floor2-mark-37",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      21.5833,
+      3.0833
+     ],
+     "b": [
+      21.5833,
+      5.9167
+     ]
+    },
+    {
+     "id": "floor2-mark-38",
+     "type": "mark",
+     "kind": "window-blocked",
+     "label": "",
+     "a": [
+      21.5833,
+      9.3333
+     ],
+     "b": [
+      21.5833,
+      12.1667
+     ]
+    },
+    {
+     "id": "floor2-mark-39",
+     "type": "mark",
+     "kind": "window-blocked",
+     "label": "",
+     "a": [
+      14.75,
+      30
+     ],
+     "b": [
+      17.5833,
+      30
+     ]
+    },
+    {
+     "id": "floor2-mark-40",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      21.5833,
+      16.0333
+     ],
+     "b": [
+      21.5833,
+      18.8667
+     ]
+    },
+    {
+     "id": "floor2-mark-41",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      21.5833,
+      24.1667
+     ],
+     "b": [
+      21.5833,
+      27
+     ]
+    },
+    {
+     "id": "floor2-mark-42",
+     "type": "mark",
+     "kind": "window-maybe",
+     "label": "",
+     "a": [
+      0,
+      23.5833
+     ],
+     "b": [
+      0,
+      26.4167
+     ]
+    },
+    {
+     "id": "floor2-item-43",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "",
+     "cx": 1.5,
+     "cy": 46.5,
+     "w": 3.0,
+     "h": 2.0,
+     "rot": 0.0
+    },
+    {
+     "id": "floor2-item-44",
+     "type": "item",
+     "kind": "chimney",
+     "shape": "rect",
+     "label": "",
+     "cx": 20.5833,
+     "cy": 21.65,
+     "w": 2.0,
+     "h": 2.5,
+     "rot": 0.0
+    },
+    {
+     "id": "floor2-point-45",
+     "type": "point",
+     "kind": "thermo",
+     "label": "Thermostat",
+     "x": 6.7667,
+     "y": 18.5167
+    }
+   ]
+  },
+  {
+   "id": "attic",
+   "title": "Attics",
+   "objects": [
+    {
+     "id": "attic-room-1",
+     "type": "room",
+     "kind": "attic",
+     "label": "Main attic",
+     "points": [
+      [
+       0,
+       0
+      ],
+      [
+       21.5833,
+       0
+      ],
+      [
+       21.5833,
+       30
+      ],
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    {
+     "id": "attic-room-2",
+     "type": "room",
+     "kind": "attic",
+     "label": "Bathroom attic",
+     "points": [
+      [
+       0,
+       30.4167
+      ],
+      [
+       12.5,
+       30.4167
+      ],
+      [
+       12.5,
+       47.5
+      ],
+      [
+       0,
+       47.5
+      ]
+     ]
+    },
+    {
+     "id": "attic-room-3",
+     "type": "room",
+     "kind": "stairs",
+     "label": "Stair ↓",
+     "points": [
+      [
+       0,
+       13.4167
+      ],
+      [
+       3.5,
+       13.4167
+      ],
+      [
+       3.5,
+       16.4167
+      ],
+      [
+       0,
+       16.4167
+      ]
+     ]
+    },
+    {
+     "id": "attic-mark-4",
+     "type": "mark",
+     "kind": "opening",
+     "label": "open gaps",
+     "a": [
+      1.5,
+      30
+     ],
+     "b": [
+      4.5,
+      30
+     ]
+    },
+    {
+     "id": "attic-mark-5",
+     "type": "mark",
+     "kind": "opening",
+     "label": "",
+     "a": [
+      7.5,
+      30
+     ],
+     "b": [
+      10.5,
+      30
+     ]
+    },
+    {
+     "id": "attic-mark-6",
+     "type": "mark",
+     "kind": "window",
+     "label": "",
+     "a": [
+      0,
+      13.5833
+     ],
+     "b": [
+      0,
+      16.4167
+     ]
+    },
+    {
+     "id": "attic-point-7",
+     "type": "point",
+     "kind": "ap",
+     "label": "Wi-Fi AP",
+     "x": 11.0833,
+     "y": 1.6
+    }
+   ]
+  }
+ ]
+}
