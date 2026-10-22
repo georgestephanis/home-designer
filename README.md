@@ -62,3 +62,7 @@ static host.
 
 Coordinates are in feet with north up and y growing southward. Rooms are stored by their inside
 faces, and wall thickness is drawn outward from them.
+
+## License
+
+[GPL-3.0-or-later](LICENSE). Copyright © 2026 George Stephanis.
