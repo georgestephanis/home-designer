@@ -13,12 +13,14 @@ export interface Room { id: string; type: "room"; kind: RoomKind; label: string;
 export interface Item {
   id: string; type: "item"; kind: ItemKind; shape: "rect" | "ellipse"; label: string;
   cx: number; cy: number; w: number; h: number; rot: number; glyph?: string;
+  /** A Home Assistant entity shown here (e.g. "light.sofa"), when the plan lives in Home Assistant. */
+  entity?: string;
 }
 /** A door, window or opening along a wall, from a to b. */
 export interface Mark { id: string; type: "mark"; kind: MarkKind; label: string; a: Vec; b: Vec }
 export interface Point {
   id: string; type: "point"; kind: PointKind; label: string; x: number; y: number;
-  aim?: number; range?: number;
+  aim?: number; range?: number; entity?: string;
 }
 /** A dimension line from a to b, drawn `offset` feet to the left of a→b. */
 export interface Dim { id: string; type: "dim"; label: string; a: Vec; b: Vec; offset: number }

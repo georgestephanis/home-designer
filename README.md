@@ -35,6 +35,41 @@ Shortcuts: <kbd>V</kbd> select, <kbd>B</kbd> room, <kbd>W</kbd> door/window, <kb
 duplicate, <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd> save.
 <kbd>Shift</kbd> keeps lines straight and adds to the selection, and <kbd>Alt</kbd> turns off snapping.
 
+## In Home Assistant
+
+The same editor also runs inside Home Assistant as an integration (`custom_components/home_designer`).
+The plan is kept in Home Assistant, so it's included in its backups. You can place any of your
+entities on it, then show it on a dashboard where everything is live.
+
+- **Floor plan** in the sidebar (admins only) is the editor. Select a device or a piece of
+  furniture and choose its **Home Assistant entity**. **Save** stores the plan in Home
+  Assistant, and every open dashboard updates straight away. The last 20 saved versions are kept
+  in `.storage/home_designer.history`.
+- **The Floor plan card** (`custom:home-designer-card`) shows the plan with floor tabs. Each
+  placed entity gets Home Assistant's own state icon:
+  - Tap a light, switch or fan to toggle it.
+  - Tap anything else, or press and hold, to see its details.
+  - A room glows while a light inside it is on, so moving a light on the plan moves its glow.
+
+  ```yaml
+  type: custom:home-designer-card
+  default_level: floor1   # floor to open on (optional)
+  # level: floor2         # show only this floor, with no tabs
+  # title: House
+  ```
+
+  It suits a **Panel** view, which gives one card the whole page.
+
+**Install:**
+1. Copy `custom_components/home_designer` into your Home Assistant's `custom_components` folder,
+   or add this repository to HACS as a custom integration repository.
+2. Restart Home Assistant.
+3. Add **Home Designer** under Settings → Devices & services.
+
+The built frontend (`custom_components/home_designer/frontend/home-designer.js`) is committed,
+so no build step is needed. After changing anything in `src/`, rebuild it with
+`npm run build:ha`.
+
 ## Develop
 
 ```bash
@@ -42,6 +77,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # unit tests (units, geometry, SVG save/load/import)
 npm run build      # static site in dist/
+npm run build:ha   # the Home Assistant panel and card, into custom_components/home_designer/frontend/
 ```
 
 The build is a plain static site with relative paths, so `dist/` can be served from any folder or
@@ -59,6 +95,9 @@ static host.
 | `src/units.ts` | Parsing and formatting lengths |
 | `src/catalog.ts` | Furniture sizes |
 | `src/samples/sample.json` | The sample house it opens with |
+| `src/host.ts` | What the editor needs from a host that keeps the plan (Home Assistant) instead of files |
+| `src/ha/` | The Home Assistant build: the panel element, the dashboard card, and the websocket calls |
+| `custom_components/home_designer/` | The Home Assistant integration: stores the plan, serves the frontend, adds the panel |
 
 Coordinates are in feet with north up and y growing southward. Rooms are stored by their inside
 faces, and wall thickness is drawn outward from them.

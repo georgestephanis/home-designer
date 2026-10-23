@@ -1,0 +1,13 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home Designer",
+        "description": "Adds a Floor plan page to the sidebar for drawing your home and placing lights and sensors on it, and a floor plan card for dashboards."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Home Designer is already set up."
+    }
+  }
+}

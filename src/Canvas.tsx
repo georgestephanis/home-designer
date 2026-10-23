@@ -9,7 +9,7 @@ import {
   add, bbox, dist, fromLocal, itemCorners, mid, objPoints, polyArea, rayToPoly, rotate, roomAt, snap,
   snapMarkToWall, toLocal, walledRooms,
 } from "./geometry";
-import { ART_STYLE, Compass, DimLine, LevelArt } from "./render";
+import { ART_STYLE, Compass, DimLine, LevelArt, type States } from "./render";
 import { fmtArea, fmtLen } from "./units";
 
 export type Tool = "select" | "room" | "measure" | "opening" | "text";
@@ -37,6 +37,8 @@ export interface CanvasProps {
   settle: (base: Doc) => void;
   onDropCatalog: (entryId: string, at: Vec) => void;
   toast: (msg: string) => void;
+  /** Live entity states, when the plan lives in Home Assistant. */
+  states?: States;
 }
 
 type Drag =
@@ -596,7 +598,7 @@ export function Canvas(p: CanvasProps) {
       <rect className="bg" x={vb.x} y={vb.y} width={vb.w} height={vb.h} />
       {grid}
       {p.below && <g className="below" style={{ pointerEvents: "none" }}><LevelArt level={p.below} wall={p.doc.wall} /></g>}
-      <g className={p.lockStructure ? "locked" : ""}><LevelArt level={p.level} wall={p.doc.wall} /></g>
+      <g className={p.lockStructure ? "locked" : ""}><LevelArt level={p.level} wall={p.doc.wall} states={p.states} /></g>
       <g className="sizes" style={{ pointerEvents: "none" }}>{sizes}</g>
       <g className="measures" style={{ pointerEvents: "none" }}>{measures}</g>
       <g className="overlays">{overlays}</g>

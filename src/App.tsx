@@ -7,10 +7,12 @@ import { MARK_KINDS, KIND_LABEL, blankDoc, isDoc, translate, uid, type Doc, type
 import { docBounds, polyArea } from "./geometry";
 import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
+import { Conflict, boundEntities, useStates, type Host } from "./host";
 import sample from "./samples/sample.json";
 
 const DRAFT_KEY = "home-designer:draft";
 const PREFS_KEY = "home-designer:prefs";
+const HOST_DRAFT_KEY = "home-designer:host-draft";
 
 const load = <T,>(key: string): T | null => {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) as T : null; } catch { return null; }
@@ -37,9 +39,9 @@ const TOOLS: { id: Tool; name: string; key: string; icon: string }[] = [
   { id: "text", name: "Note", key: "T", icon: "M5 5h14 M12 5v14 M9 19h6" },
 ];
 
-export default function App() {
-  const draft = useMemo(() => load<{ doc: Doc; name: string }>(DRAFT_KEY), []);
-  const hist = useHistory<Doc>(() => (draft && isDoc(draft.doc) ? draft.doc : sampleDoc()));
+export default function App({ host }: { host?: Host }) {
+  const draft = useMemo(() => (host ? null : load<{ doc: Doc; name: string }>(DRAFT_KEY)), [host]);
+  const hist = useHistory<Doc>(() => (host ? blankDoc() : draft && isDoc(draft.doc) ? draft.doc : sampleDoc()));
   const { doc, commit, live, settle, undo, redo, reset } = hist;
   const [fileName, setFileName] = useState(draft?.name ?? "sample-house.svg");
   const [levelId, setLevelId] = useState(() => doc.levels.find((l) => l.id === "floor1")?.id ?? doc.levels[0].id);
@@ -55,6 +57,15 @@ export default function App() {
   const clip = useRef<Obj[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const stage = useRef<HTMLDivElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  // With a host: the plan as last saved there (the editor is clean while showing exactly that).
+  const [saved, setSaved] = useState<Doc | null>(null);
+  const [saving, setSaving] = useState(false);
+  const rev = useRef(-1);
+  const savingRef = useRef(false);
+  const dirty = !!host && !!saved && doc !== saved;
+  const dirtyRef = useRef(dirty);
+  dirtyRef.current = dirty;
 
   const level = doc.levels.find((l) => l.id === levelId) ?? doc.levels[0];
   const li = doc.levels.indexOf(level);
@@ -64,22 +75,94 @@ export default function App() {
   const toast = useCallback((m: string) => { setToast(m); }, []);
   useEffect(() => { if (!toastMsg) return; const t = setTimeout(() => setToast(null), 3200); return () => clearTimeout(t); }, [toastMsg]);
 
-  // Keep a draft in this browser so a refresh doesn't lose work.
-  useEffect(() => { const t = setTimeout(() => save(DRAFT_KEY, { doc, name: fileName }), 400); return () => clearTimeout(t); }, [doc, fileName]);
+  // Keep a draft in this browser so a refresh doesn't lose work. With a host, only unsaved
+  // changes are kept, with the revision they were made on.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (!host) save(DRAFT_KEY, { doc, name: fileName });
+      else if (saved) save(HOST_DRAFT_KEY, dirty ? { rev: rev.current, doc } : null);
+    }, 400);
+    return () => clearTimeout(t);
+  }, [doc, fileName, host, saved, dirty]);
   useEffect(() => save(PREFS_KEY, prefs), [prefs]);
   useEffect(() => { if (!doc.levels.some((l) => l.id === levelId)) setLevelId(doc.levels[0].id); }, [doc, levelId]);
   useEffect(() => { if (selection.length) setPanel("inspect"); }, [selection]);
 
-  const fit = useCallback((d: Doc = doc, lid = levelId) => {
+  // A fit asked for before the canvas has a size (it's still loading, or the page around it is
+  // still laying out) waits for it.
+  const pendingFit = useRef<[Doc, string] | null>(null);
+  const fit = useCallback((d: Doc = doc, lid: string = levelId) => {
     const el = stage.current?.querySelector<SVGSVGElement>(".canvas");
+    if (!el || el.clientWidth < 50 || el.clientHeight < 50) { pendingFit.current = [d, lid]; return; }
+    pendingFit.current = null;
     const lv = d.levels.find((l) => l.id === lid) ?? d.levels[0];
     const b = docBounds(lv.objects.length ? [lv] : d.levels);
-    const w = el?.clientWidth ?? 800, h = el?.clientHeight ?? 600;
+    const w = el.clientWidth, h = el.clientHeight;
     const scale = Math.max(2, Math.min(80, Math.min((w - 60) / (b.x1 - b.x0 + 2), (h - 60) / (b.y1 - b.y0 + 2))));
     setView({ cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2, scale });
   }, [doc, levelId]);
+  const fitRef = useRef(fit);
+  fitRef.current = fit;
+  useEffect(() => {
+    const el = stage.current?.querySelector<SVGSVGElement>(".canvas");
+    if (!el) return;
+    const ro = new ResizeObserver(() => { if (pendingFit.current) fitRef.current(...pendingFit.current); });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [saved]);
   // Fit once the layout has settled (two frames: the canvas sizes itself from the grid).
-  useEffect(() => { requestAnimationFrame(() => requestAnimationFrame(() => fit())); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const fitSoon = (d?: Doc, lid?: string) => requestAnimationFrame(() => requestAnimationFrame(() => fitRef.current(d, lid)));
+  useEffect(() => { if (!host) fitSoon(); root.current?.focus({ preventScroll: true }); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The host's plan: the first one opens (or a draft of unsaved changes made on it); later ones
+  // are saves from elsewhere, taken as they come unless there are changes here to keep.
+  useEffect(() => {
+    if (!host) return;
+    return host.watch(({ doc: d, rev: r }) => {
+      if (r === rev.current || savingRef.current) return;
+      const first = rev.current < 0;
+      rev.current = r;
+      const base = d && isDoc(d) ? d : blankDoc();
+      if (first) {
+        const kept = load<{ rev: number; doc: Doc }>(HOST_DRAFT_KEY);
+        const restore = kept && kept.rev === r && isDoc(kept.doc) && JSON.stringify(kept.doc) !== JSON.stringify(base);
+        reset(restore ? kept.doc : base);
+        setSaved(base);
+        const lid = base.levels.find((l) => l.id === "floor1")?.id ?? base.levels[0].id;
+        setLevelId(lid);
+        fitSoon(base, lid);
+        if (restore) toast("Restored your unsaved changes.");
+        else if (!d) toast(`No plan in ${host.name} yet. Draw one, or open a file from More, then Save.`);
+        return;
+      }
+      if (dirtyRef.current) { toast(`The plan was saved from somewhere else. Saving now will ask before replacing it.`); return; }
+      reset(base);
+      setSaved(base);
+      toast("Updated with changes saved from somewhere else.");
+    });
+  }, [host]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const saveToHost = async () => {
+    if (!host || saving) return;
+    setSaving(true);
+    savingRef.current = true;
+    try {
+      try {
+        rev.current = await host.save(doc, rev.current);
+      } catch (err) {
+        if (!(err instanceof Conflict)) throw err;
+        if (!confirm("The plan was saved from somewhere else since you opened it. Replace that version with yours?")) return;
+        rev.current = await host.save(doc, -1);
+      }
+      setSaved(doc);
+      toast(`Saved to ${host.name}.`);
+    } catch (err) {
+      toast(`Couldn't save: ${(err as Error).message}`);
+    } finally {
+      setSaving(false);
+      savingRef.current = false;
+    }
+  };
 
   const switchLevel = (id: string) => { setLevelId(id); setSelection([]); };
 
@@ -92,7 +175,7 @@ export default function App() {
       const lid = d.levels.find((l) => l.id === "floor1")?.id ?? d.levels[0].id;
       setLevelId(lid);
       setSelection([]);
-      requestAnimationFrame(() => fit(d, lid));
+      fitSoon(d, lid);
       toast(note ?? `Opened ${name}.`);
     } catch (err) {
       toast(`Couldn't open ${name}: ${(err as Error).message}`);
@@ -145,17 +228,17 @@ export default function App() {
   };
 
   const newDoc = () => {
-    if (!confirm("Start a new, empty plan? Unsaved changes to this one will be lost (the draft is replaced).")) return;
+    if (!confirm(host ? `Start a new, empty plan? Nothing changes in ${host.name} until you Save.` : "Start a new, empty plan? Unsaved changes to this one will be lost (the draft is replaced).")) return;
     const d = blankDoc();
     reset(d); handle.current = null; setFileName("new-home.svg"); setLevelId(d.levels[0].id); setSelection([]);
     setView({ cx: 15, cy: 12, scale: 20 });
   };
 
   const loadSample = () => {
-    if (!confirm("Open the sample house? Unsaved changes to this plan will be lost.")) return;
+    if (!confirm(host ? `Open the sample house? Nothing changes in ${host.name} until you Save.` : "Open the sample house? Unsaved changes to this plan will be lost.")) return;
     const d = sampleDoc();
     reset(d); handle.current = null; setFileName("sample-house.svg");
-    setLevelId("floor1"); setSelection([]); requestAnimationFrame(() => fit(d, "floor1"));
+    setLevelId("floor1"); setSelection([]); fitSoon(d, "floor1");
   };
 
   // Open files dropped anywhere on the window.
@@ -257,15 +340,17 @@ export default function App() {
   };
 
   // ---- Keyboard ---------------------------------------------------------------------------
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+  // Shortcuts are handled on the app itself, not the window, so inside Home Assistant they
+  // don't also set off its own one-letter shortcuts.
+  const onKey = (e: React.KeyboardEvent) => {
       const t = e.target as HTMLElement;
+      const used = () => e.stopPropagation();
       if (t.closest("input,select,textarea,[contenteditable]")) return;
       const mod = e.ctrlKey || e.metaKey;
       const k = e.key.toLowerCase();
       if (mod && k === "z") { e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
       if (mod && k === "y") { e.preventDefault(); redo(); return; }
-      if (mod && k === "s") { e.preventDefault(); saveAs(e.shiftKey); return; }
+      if (mod && k === "s") { e.preventDefault(); used(); if (host && !e.shiftKey) saveToHost(); else saveAs(e.shiftKey); return; }
       if (mod && k === "o") { e.preventDefault(); open(); return; }
       if (mod && k === "a") { e.preventDefault(); setSelection(level.objects.filter((o) => !(lockStructure && (o.type === "room" || o.type === "mark"))).map((o) => o.id)); return; }
       if (mod && k === "c") { clip.current = structuredClone(selected); return; }
@@ -273,34 +358,55 @@ export default function App() {
       if (mod && k === "v") { e.preventDefault(); paste(clip.current); return; }
       if (mod && k === "d") { e.preventDefault(); paste(selected); return; }
       if (mod) return;
-      if (k === "delete" || k === "backspace") { e.preventDefault(); del(); return; }
-      if (k === "escape") { setSelection([]); setTool("select"); return; }
+      if (k === "delete" || k === "backspace") { used(); e.preventDefault(); del(); return; }
+      if (k === "escape") { used(); setSelection([]); setTool("select"); return; }
       if (k === "r" && selected.length) {
+        used();
         commit((d) => mapObjs(d, levelId, selection, (o) => (o.type === "item" ? { ...o, rot: ((o.rot + (e.shiftKey ? -90 : 90) + 540) % 360) - 180 } : o)));
         return;
       }
       if (k.startsWith("arrow") && selected.length) {
-        e.preventDefault();
+        e.preventDefault(); used();
         const step = (prefs.snapOn ? prefs.snapStep : 1 / 12) * (e.shiftKey ? 12 : 1);
         const [dx, dy] = { arrowleft: [-step, 0], arrowright: [step, 0], arrowup: [0, -step], arrowdown: [0, step] }[k] as Vec;
         commit((d) => mapObjs(d, levelId, selection, (o) => translate(o, dx, dy)));
         return;
       }
-      if (k === "f") { fit(); return; }
-      if (k === "g") { setPrefs((p) => ({ ...p, showGrid: !p.showGrid })); return; }
+      if (k === "f") { used(); fit(); return; }
+      if (k === "g") { used(); setPrefs((p) => ({ ...p, showGrid: !p.showGrid })); return; }
       const t2 = TOOLS.find((x) => x.key.toLowerCase() === k);
-      if (t2) setTool(t2.id);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
+      if (t2) { used(); setTool(t2.id); }
+  };
+
+  const states = useStates(host, useMemo(() => boundEntities(level.objects), [level]));
 
   const roomsArea = useMemo(() => level.objects.reduce((s, o) =>
     s + (o.type === "room" && ["room", "hall", "wet", "closet"].includes(o.kind) ? polyArea(o.points) : 0), 0), [level]);
 
+  if (host && !saved) return <div className="app loading">Loading the plan from {host.name}…{toastMsg && <div className="toast" role="status">{toastMsg}</div>}</div>;
+
+  const menuItems = <>
+    {host
+      ? <>
+          <button type="button" onClick={open}>Open a file…</button>
+          <button type="button" onClick={() => saveAs(true)}>Download as SVG…</button>
+        </>
+      : <button type="button" onClick={() => saveAs(true)}>Save as…</button>}
+    <button type="button" onClick={exportLevel}>Export this floor only</button>
+    <button type="button" onClick={() => download(fileName.replace(/\.svg$/i, ".json"), JSON.stringify(doc, null, 1), "application/json")}>Download project JSON</button>
+    <hr />
+    <button type="button" onClick={newDoc}>New empty plan</button>
+    <button type="button" onClick={loadSample}>Open the sample house</button>
+  </>;
+
   return (
-    <div className="app">
+    <div className="app" ref={root} tabIndex={-1} onKeyDown={onKey}
+      onPointerDownCapture={(e) => { if (!(e.target as Element).closest("input,select,textarea,button,summary")) root.current?.focus({ preventScroll: true }); }}>
       <header className="topbar">
+        {host?.narrow && host.toggleMenu && (
+          <button type="button" className="icon" onClick={host.toggleMenu} aria-label="Open the sidebar">
+            <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button>
+        )}
         <div className="brand">
           <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="3" width="26" height="26" rx="3" /><path d="M6 6h11v20H6zM19 6h7v9h-7zM19 17h7v9h-7z" /></svg>
           <input id="doc-name" className="doc-name" value={doc.name} aria-label="Plan name"
@@ -308,17 +414,19 @@ export default function App() {
             onKeyDown={(e) => e.stopPropagation()} />
         </div>
         <div className="file-actions">
-          <button type="button" onClick={open} title="Open an SVG or JSON plan (Ctrl+O)">Open</button>
-          <button type="button" className="primary" onClick={() => saveAs(false)} title="Save as SVG (Ctrl+S)">Save</button>
+          {host
+            ? <>
+                <span className={`save-state${dirty ? " dirty" : ""}`} role="status">{saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}</span>
+                <button type="button" className="primary" onClick={saveToHost} disabled={saving || !dirty} title={`Save to ${host.name} (Ctrl+S)`}>Save</button>
+              </>
+            : <>
+                <button type="button" onClick={open} title="Open an SVG or JSON plan (Ctrl+O)">Open</button>
+                <button type="button" className="primary" onClick={() => saveAs(false)} title="Save as SVG (Ctrl+S)">Save</button>
+              </>}
           <details className="menu">
             <summary aria-label="More file actions">More</summary>
             <div className="menu-list" onClick={(e) => (e.currentTarget.parentElement as HTMLDetailsElement).open = false}>
-              <button type="button" onClick={() => saveAs(true)}>Save as…</button>
-              <button type="button" onClick={exportLevel}>Export this floor only</button>
-              <button type="button" onClick={() => download(fileName.replace(/\.svg$/i, ".json"), JSON.stringify(doc, null, 1), "application/json")}>Download project JSON</button>
-              <hr />
-              <button type="button" onClick={newDoc}>New empty plan</button>
-              <button type="button" onClick={loadSample}>Open the sample house</button>
+              {menuItems}
             </div>
           </details>
           <input ref={fileInput} type="file" accept=".svg,.json,image/svg+xml,application/json" hidden id="file-input"
@@ -371,7 +479,7 @@ export default function App() {
           doc={doc} level={level} below={below} tool={tool} markKind={markKind} selection={selection}
           snapStep={prefs.snapStep} snapOn={prefs.snapOn} showGrid={prefs.showGrid} showSizes={prefs.showSizes}
           lockStructure={lockStructure} view={view} setView={setView} setSelection={setSelection} setTool={setTool}
-          commit={commit} live={live} settle={settle} toast={toast}
+          commit={commit} live={live} settle={settle} toast={toast} states={states}
           onDropCatalog={(id, at) => { const e = CATALOG.find((c) => c.id === id); if (e) addFromCatalog(e, at); }}
         />
         <div className="viewbar">
@@ -400,7 +508,7 @@ export default function App() {
             Selection{selection.length ? ` (${selection.length})` : ""}</button>
         </div>
         {panel === "inspect"
-          ? <Inspector selected={selected}
+          ? <Inspector selected={selected} entities={host?.entities} states={states}
               onChange={(id, fn) => commit((d) => mapObjs(d, levelId, [id], fn))}
               onDelete={del} onDuplicate={() => paste(selected)} onFront={() => restack(true)} onBack={() => restack(false)} />
           : <CatalogPanel onAdd={(e) => addFromCatalog(e)} />}

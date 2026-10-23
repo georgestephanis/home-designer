@@ -1,13 +1,13 @@
 // Draws a level. Used both by the editor canvas and by SVG export, so a saved file looks like
 // the editor. All sizes are in feet (the SVG user unit); exports scale 1 ft = 30 px.
 import type { ReactNode } from "react";
-import { WALLED, type Dim, type Item, type Level, type Mark, type Point, type Room, type Text, type Vec } from "./model";
-import { bbox, dist, mid, rad, wallSpan } from "./geometry";
+import { WALLED, type Dim, type Item, type Level, type Mark, type Obj, type Point, type Room, type Text, type Vec } from "./model";
+import { bbox, dist, mid, rad, roomAt, wallSpan } from "./geometry";
 import { fmtLen } from "./units";
 
 export const PX_PER_FT = 30;
 
-const DARK = `--bg:#15171a;--ink:#e6e8eb;--muted:#9aa3ad;--line:#a8b3c2;--room:#1d2126;--hall:#232a33;--stairs:#2b3038;
+export const DARK = `--bg:#15171a;--ink:#e6e8eb;--muted:#9aa3ad;--line:#a8b3c2;--room:#1d2126;--hall:#232a33;--stairs:#2b3038;
 --wall:#7b8796;--attic:#2a2620;--wet:#16324a;--closet:#262a30;--fixture:#3b4350;--furn:#2a2f37;--accent:#fb923c;
 --window:#38bdf8;--fov:rgba(251,146,60,.12);--dim:#93c5fd;--stone:#78716c`;
 
@@ -53,7 +53,35 @@ export const ART_STYLE = `
 .hd-art .dim line{stroke:var(--dim);stroke-width:.04} .hd-art .dim text{fill:var(--dim);font-weight:600;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:var(--bg);stroke-linejoin:round}
 .hd-art .free{fill:var(--ink);font-weight:500;text-anchor:middle;dominant-baseline:middle}
 .hd-art .title{fill:var(--ink);font-weight:700}
+.hd-art .glow{fill:#facc15;pointer-events:none}
+.hd-art .bound{fill:none;stroke:var(--accent);stroke-width:.06}
+.hd-art .device.on{fill:#facc15;stroke:#a16207}
 `;
+
+/** Home Assistant states for the entities placed on the plan, by entity id. */
+export type States = Record<string, string | undefined>;
+
+/** Where a placed entity sits on the plan. */
+export function entityAt(o: Obj): Vec | null {
+  if (!("entity" in o) || !o.entity) return null;
+  return o.type === "point" ? [o.x, o.y] : o.type === "item" ? [o.cx, o.cy] : null;
+}
+
+/**
+ * Rooms lit by a light that's on, with how many are on in each. A light lights the smallest
+ * room it sits in, so moving it on the plan moves the glow too.
+ */
+export function litRooms(objs: Obj[], states: States): { room: Room; n: number }[] {
+  const lit = new Map<Room, number>();
+  for (const o of objs) {
+    const at = entityAt(o);
+    const id = "entity" in o ? o.entity : undefined;
+    if (!at || !id?.startsWith("light.") || states[id] !== "on") continue;
+    const r = roomAt(objs, at);
+    if (r) lit.set(r, (lit.get(r) ?? 0) + 1);
+  }
+  return [...lit].map(([room, n]) => ({ room, n }));
+}
 
 const LABEL_W = 0.58; // average glyph width / font size, as gen.py estimates it
 
@@ -217,8 +245,9 @@ function markLabel(m: Mark): ReactNode {
     y={c[1] - (vertical ? 0 : 0.42)} fontSize={0.667}>{m.label}</text>;
 }
 
-function PointShape({ p }: { p: Point }) {
+function PointShape({ p, states }: { p: Point; states?: States }) {
   let body: ReactNode;
+  const on = p.entity && states?.[p.entity] === "on";
   if (p.kind === "thermo") body = <rect className="thermo" x={p.x - 0.27} y={p.y - 0.27} width={0.53} height={0.53} rx={0.1} />;
   else if (p.kind === "sensor") {
     const aim = rad(p.aim ?? -90), r = p.range ?? 6, half = 1.05;
@@ -228,8 +257,8 @@ function PointShape({ p }: { p: Point }) {
       <path className="fov" d={`M${p.x},${p.y} L${w1[0]},${w1[1]} A${r},${r} 0 0 1 ${w2[0]},${w2[1]} Z`} />
       <circle className="sensor" cx={p.x} cy={p.y} r={0.3} />
     </>;
-  } else body = <circle className={p.kind} cx={p.x} cy={p.y} r={p.kind === "device" ? 0.233 : 0.3} />;
-  return <g data-id={p.id}>{body}</g>;
+  } else body = <circle className={`${p.kind}${on ? " on" : ""}`} cx={p.x} cy={p.y} r={p.kind === "device" ? 0.233 : 0.3} />;
+  return <g data-id={p.id}>{body}{p.entity && states && <circle className="bound" cx={p.x} cy={p.y} r={0.45} />}</g>;
 }
 
 function pointLabel(p: Point): ReactNode {
@@ -274,8 +303,12 @@ export function DimLine({ a, b, offset, label, size = 0.55, id, className = "dim
   );
 }
 
-/** One level of the plan. */
-export function LevelArt({ level, wall }: { level: Level; wall: number }) {
+/**
+ * One level of the plan. With `states`, rooms glow while their lights are on and placed
+ * entities are ringed; `hideBound` leaves placed entities out entirely, for a dashboard card
+ * that draws its own live icons over them.
+ */
+export function LevelArt({ level, wall, states, hideBound }: { level: Level; wall: number; states?: States; hideBound?: boolean }) {
   const objs = level.objects;
   const rooms = objs.filter((o): o is Room => o.type === "room");
   const items = objs.filter((o): o is Item => o.type === "item");
@@ -293,17 +326,21 @@ export function LevelArt({ level, wall }: { level: Level; wall: number }) {
   for (const it of items) labels.push(itemLabel(it));
   const marks = objs.filter((o): o is Mark => o.type === "mark");
   for (const m of marks) labels.push(markLabel(m));
-  const points = objs.filter((o): o is Point => o.type === "point");
+  const points = objs.filter((o): o is Point => o.type === "point" && !(hideBound && o.entity));
   for (const p of points) labels.push(pointLabel(p));
+  // Two lights on in a room each add a fainter layer, so the room is brighter with both on.
+  const glows = states ? litRooms(objs, states) : [];
 
   return (
     <g className="level" data-level={level.id}>
       {walled.map((r) => <polygon key={`w-${r.id}`} className="wall" points={ptsAttr(r.points)}
         style={{ stroke: "var(--wall)", strokeWidth: wall * 2, strokeLinejoin: "miter", strokeMiterlimit: 20 }} />)}
       {rooms.map((r) => <RoomShape key={r.id} r={r} />)}
+      {glows.map(({ room, n }) => <polygon key={`g-${room.id}`} className="glow" points={ptsAttr(room.points)}
+        style={{ fillOpacity: 1 - (1 - 0.35 / Math.sqrt(n)) ** n }} />)}
       {items.map((it) => <ItemShape key={it.id} it={it} />)}
       {marks.map((m) => markShape(m, objs, wall))}
-      {points.map((p) => <PointShape key={p.id} p={p} />)}
+      {points.map((p) => <PointShape key={p.id} p={p} states={states} />)}
       <g className="labels" style={{ pointerEvents: "none" }}>{labels}</g>
       {objs.filter((o): o is Dim => o.type === "dim").map((d) =>
         <DimLine key={d.id} id={d.id} a={d.a} b={d.b} offset={d.offset} label={d.label} />)}

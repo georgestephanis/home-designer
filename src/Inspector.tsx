@@ -7,6 +7,8 @@ import {
 } from "./model";
 import { bbox, dist, polyArea } from "./geometry";
 import { fmtArea, fmtLen, parseLen } from "./units";
+import type { EntityInfo } from "./host";
+import type { States } from "./render";
 
 interface Props {
   selected: Obj[];
@@ -15,6 +17,9 @@ interface Props {
   onDuplicate: () => void;
   onFront: () => void;
   onBack: () => void;
+  /** Home Assistant's entities, to place on the plan (only inside Home Assistant). */
+  entities?: () => EntityInfo[];
+  states?: States;
 }
 
 /** A length field: shows 12′ 6″, accepts most ways of typing a length, commits on Enter/blur. */
@@ -112,7 +117,7 @@ export function setEdgeLength(r: Room, i: number, L: number): Room {
   return { ...r, points: pts.map((q) => (far(q[axis]) ? (axis === 0 ? [q[0] + shift, q[1]] : [q[0], q[1] + shift]) as Vec : q)) };
 }
 
-export function Inspector({ selected, onChange, onDelete, onDuplicate, onFront, onBack }: Props) {
+export function Inspector({ selected, onChange, onDelete, onDuplicate, onFront, onBack, entities, states }: Props) {
   if (!selected.length) {
     return (
       <div className="inspector empty">
@@ -147,6 +152,9 @@ export function Inspector({ selected, onChange, onDelete, onDuplicate, onFront, 
       {o.type === "point" && <PointFields pt={o} set={set} k={k} />}
       {o.type === "dim" && <DimFields d={o} set={set} k={k} />}
       {o.type === "text" && <TextFields t={o} set={set} k={k} />}
+      {entities && (o.type === "point" || o.type === "item") &&
+        <EntityField k={k} value={o.entity ?? ""} entities={entities} state={o.entity ? states?.[o.entity] : undefined}
+          onCommit={(v) => set((x) => ({ ...x, entity: v || undefined }) as Obj)} />}
       <Actions onDelete={onDelete} onDuplicate={onDuplicate} onFront={onFront} onBack={onBack} />
     </div>
   );
@@ -316,6 +324,36 @@ function TextFields({ t, set, k }: { t: Text; set: SetFn; k: string }) {
     <>
       <TextInput id={`${k}-label`} label="Text" value={t.label} onCommit={(v) => upd((t) => ({ ...t, label: v }))} />
       <LengthInput id={`${k}-size`} label="Text height" value={t.size} min={0.1} onCommit={(v) => upd((t) => ({ ...t, size: v }))} />
+    </>
+  );
+}
+
+/**
+ * Which Home Assistant entity sits here. Lights glow in the room they're placed in, and the
+ * dashboard card shows a live icon you can tap. The list is filled in when the field is used.
+ */
+function EntityField({ k, value, entities, state, onCommit }: {
+  k: string; value: string; entities: () => EntityInfo[]; state?: string; onCommit: (v: string) => void;
+}) {
+  const [text, setText] = useState(value);
+  const [list, setList] = useState<EntityInfo[]>([]);
+  useEffect(() => setText(value), [value]);
+  const fill = () => { if (!list.length) setList(entities().sort((a, b) => a.id.localeCompare(b.id))); };
+  const commit = () => { const v = text.trim(); if (v !== value) onCommit(v); };
+  const known = !value || list.length === 0 || list.some((e) => e.id === value);
+  return (
+    <>
+      <label className="field" htmlFor={`${k}-entity`}>
+        <span>Home Assistant entity</span>
+        <input id={`${k}-entity`} list={`${k}-entities`} value={text} placeholder="e.g. light.sofa_light" spellCheck={false}
+          onFocus={fill} onChange={(e) => setText(e.target.value)} onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter") commit(); e.stopPropagation(); }} />
+        <datalist id={`${k}-entities`}>
+          {list.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+        </datalist>
+      </label>
+      {value && <p className="readout">{known ? `Now ${state ?? "unknown"}.` : "Home Assistant has no entity by that name."}</p>}
+      <p className="hint small">Lights glow in the room they sit in while they're on. On the dashboard card, tap it to toggle it or see details.</p>
     </>
   );
 }

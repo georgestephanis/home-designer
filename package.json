@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:ha": "tsc -b && vite build -c vite.ha.config.ts",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b"
