@@ -2,7 +2,7 @@
 // the editor. All sizes are in feet (the SVG user unit); exports scale 1 ft = 30 px.
 import type { ReactNode } from "react";
 import { WALLED, type Dim, type Item, type Level, type Mark, type Obj, type Point, type Room, type Text, type Vec } from "./model";
-import { bbox, dist, mid, rad, roomAt, wallSpan } from "./geometry";
+import { bbox, dist, doorLeaf, mid, rad, roomAt, wallSpan } from "./geometry";
 import { fmtLen } from "./units";
 
 export const PX_PER_FT = 30;
@@ -39,7 +39,8 @@ export const ART_STYLE = `
 .hd-art .note{font-weight:500;fill:var(--muted);text-anchor:middle;dominant-baseline:middle}
 .hd-art .note.start{text-anchor:start} .hd-art .note.end{text-anchor:end} .hd-art .note.ink{fill:var(--ink)}
 .hd-art .mark{stroke-width:.3;stroke-linecap:butt;fill:none}
-.hd-art .mark.door{stroke:var(--accent)} .hd-art .mark.garage{stroke:var(--accent);stroke-width:.4}
+.hd-art .mark.door{stroke:var(--accent)} .hd-art .leaf{stroke:var(--accent);stroke-width:.07;stroke-linecap:round;fill:none}
+.hd-art .swing{stroke:var(--accent);stroke-width:.035;stroke-opacity:.6;stroke-dasharray:.15 .1;fill:none} .hd-art .mark.garage{stroke:var(--accent);stroke-width:.4}
 .hd-art .mark.blocked{stroke:var(--muted);stroke-dasharray:.27 .17} .hd-art .mark.opening{stroke:var(--hall);stroke-width:.37}
 .hd-art .mark.window{stroke:var(--window);stroke-width:.23}
 .hd-art .mark.window-blocked{stroke:var(--muted);stroke-width:.23;stroke-dasharray:.07 .1}
@@ -222,18 +223,34 @@ const MARK_FRAC: Record<string, number> = { opening: 1, slider: 0.5, step: 0.5 }
 
 function markShape(m: Mark, objs: Level["objects"], wall: number): ReactNode {
   const s = wallSpan(objs, wall, m.kind, m.a, m.b);
-  let a = m.a, b = m.b, style: React.CSSProperties | undefined;
+  let a = m.a, b = m.b, t = 0, style: React.CSSProperties | undefined;
   if (s) {
-    a = s.a; b = s.b;
+    a = s.a; b = s.b; t = s.t;
     const w = Math.max(0.1, s.t * (MARK_FRAC[m.kind] ?? 0.55) + (m.kind === "opening" ? 0.067 : 0));
     style = { strokeWidth: w };
   }
   return (
     <g data-id={m.id} key={m.id}>
       <line className={`mark ${m.kind}`} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} style={style} />
+      {doorSwing(m, a, b, t)}
       {/* A fat transparent line so thin marks are easy to grab in the editor. */}
       <line x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} stroke="transparent" strokeWidth={0.6} className="hit" />
     </g>
+  );
+}
+
+/** A hinged door's leaf, open at 90°, and the arc its free edge sweeps. */
+function doorSwing(m: Mark, a: Vec, b: Vec, t: number): ReactNode {
+  const leaf = doorLeaf(m, a, b, t);
+  if (!leaf) return null;
+  const { hinge: h, shut, open } = leaf;
+  const r = dist(h, shut);
+  const cw = (shut[0] - h[0]) * (open[1] - h[1]) - (shut[1] - h[1]) * (open[0] - h[0]) > 0 ? 1 : 0;
+  return (
+    <>
+      <path className="swing" d={`M${shut[0]},${shut[1]} A${r},${r} 0 0 ${cw} ${open[0]},${open[1]}`} />
+      <line className="leaf" x1={h[0]} y1={h[1]} x2={open[0]} y2={open[1]} />
+    </>
   );
 }
 

@@ -11,8 +11,12 @@ again later, or view in any browser or vector editor. Nothing is uploaded anywhe
 - **Rooms:** drag out a rectangle, or click corner by corner for any shape. Type exact sizes
   (`12' 6"`, `6 1/2"`, `3.5`, `1.2m`) or drag a wall or corner. Walls are drawn around the rooms
   automatically. Turn on **Room sizes** to label every room with its dimensions.
-- **Doors and windows:** draw along a wall and they snap onto it. Drag them along the wall, or
-  type a width and position.
+- **Doors and windows:** click a wall to drop one at a standard width (a 3′ door, a 6′ slider…),
+  or drag along the wall for an exact width. Drag them along the wall or onto another wall, drag
+  either end to resize, or type a width and position.
+- **Door swings:** a door is drawn with its leaf and swing arc, opening into the room it was put
+  in. Choose the hinge end and use **Flip hinge** / **Flip swing**, or press <kbd>R</kbd> to step
+  through all four ways it can hang. Set the hinge to *None* for a plain door line.
 - **Furniture:** about forty common pieces at standard sizes (beds, sofas, desks, kitchen and bath
   fixtures, appliances). Click or drag one in, then move, resize or rotate it. While a piece is
   selected, dimension lines show the gap to each wall, and its sides stick to walls as you drag.
@@ -30,7 +34,7 @@ again later, or view in any browser or vector editor. Nothing is uploaded anywhe
   - Your work is kept as a draft in this browser between visits.
 
 Shortcuts: <kbd>V</kbd> select, <kbd>B</kbd> room, <kbd>W</kbd> door/window, <kbd>M</kbd> measure,
-<kbd>T</kbd> note, <kbd>R</kbd> rotate 90°, <kbd>F</kbd> fit, <kbd>G</kbd> grid, arrows nudge
+<kbd>T</kbd> note, <kbd>R</kbd> rotate 90° (or turn a door), <kbd>F</kbd> fit, <kbd>G</kbd> grid, arrows nudge
 (<kbd>Shift</kbd> for a foot), <kbd>Ctrl</kbd>+<kbd>Z</kbd>/<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd>
 duplicate, <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd> save.
 <kbd>Shift</kbd> keeps lines straight and adds to the selection, and <kbd>Alt</kbd> turns off snapping.
@@ -75,7 +79,7 @@ so no build step is needed. After changing anything in `src/`, rebuild it with
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # unit tests (units, geometry, SVG save/load/import)
+npm test           # unit tests (units, geometry, doors, SVG save/load/import)
 npm run build      # static site in dist/
 npm run build:ha   # the Home Assistant panel and card, into custom_components/home_designer/frontend/
 ```

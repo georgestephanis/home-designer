@@ -1,4 +1,4 @@
-import { WALLED, type Item, type Obj, type Room, type Vec, type MarkKind } from "./model";
+import { WALLED, type Item, type Mark, type Obj, type Room, type Vec, type MarkKind } from "./model";
 
 export const sub = (a: Vec, b: Vec): Vec => [a[0] - b[0], a[1] - b[1]];
 export const add = (a: Vec, b: Vec): Vec => [a[0] + b[0], a[1] + b[1]];
@@ -142,6 +142,96 @@ export function snapMarkToWall(objs: Obj[], a: Vec, b: Vec, maxDist: number): { 
     }
   }
   return best && dist(best.a, best.b) > 0.05 ? { a: best.a, b: best.b } : null;
+}
+
+/** The walled-room faces a mark can sit on: each room's bounding-box sides. */
+function wallFaces(objs: Obj[]) {
+  return walledRooms(objs).flatMap((r) => {
+    const box = bbox(r.points);
+    const inside: Vec = [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
+    return ([[true, box.x0], [true, box.x1], [false, box.y0], [false, box.y1]] as [boolean, number][]).map(([vertical, c]) => ({
+      vertical, c, lo: vertical ? box.y0 : box.x0, hi: vertical ? box.y1 : box.x1, inside,
+    }));
+  });
+}
+
+/**
+ * Put a mark `len` feet wide, centred as near `c` as fits, on the closest wall face within
+ * `maxDist`. Returns its ends (a at the north or west end) and a point inside the face's room.
+ */
+export function placeOnWall(objs: Obj[], c: Vec, len: number, maxDist: number): { a: Vec; b: Vec; vertical: boolean; inside: Vec } | null {
+  let best: { d: number; a: Vec; b: Vec; vertical: boolean; inside: Vec } | null = null;
+  for (const f of wallFaces(objs)) {
+    const along = f.vertical ? c[1] : c[0];
+    if (along < f.lo - 0.5 || along > f.hi + 0.5) continue;
+    const d = Math.abs((f.vertical ? c[0] : c[1]) - f.c);
+    if (d > maxDist || (best && d >= best.d)) continue;
+    const L = Math.min(len, f.hi - f.lo);
+    const m = Math.max(f.lo + L / 2, Math.min(f.hi - L / 2, along));
+    best = f.vertical
+      ? { d, a: [f.c, m - L / 2], b: [f.c, m + L / 2], vertical: true, inside: f.inside }
+      : { d, a: [m - L / 2, f.c], b: [m + L / 2, f.c], vertical: false, inside: f.inside };
+  }
+  return best && dist(best.a, best.b) > 0.05 ? best : null;
+}
+
+/** Order a→b so a door's swing side (the left of a→b for swing 1) faces `inside`. */
+function facing<T extends { a: Vec; b: Vec }>(m: T, swing: number, inside: Vec): T {
+  const L = dist(m.a, m.b) || 1;
+  const n: Vec = [(m.b[1] - m.a[1]) / L, -(m.b[0] - m.a[0]) / L];
+  const c = mid(m.a, m.b);
+  return ((inside[0] - c[0]) * n[0] + (inside[1] - c[1]) * n[1]) * swing >= 0 ? m : { ...m, a: m.b, b: m.a };
+}
+
+/** A new mark placed with a click: a door is hinged at one end and opens into the room it's in. */
+export function newMarkOnWall(objs: Obj[], kind: MarkKind, c: Vec, len: number, maxDist: number) {
+  const s = placeOnWall(objs, c, len, maxDist);
+  if (!s) return null;
+  return kind === "door" ? { ...facing({ a: s.a, b: s.b }, 1, s.inside), hinge: "a" as const, swing: 1 as const } : { a: s.a, b: s.b };
+}
+
+/**
+ * Drag a mark so its middle is at `c`: it slides along whatever wall is nearest, keeping its
+ * width. Moved to a different wall, a door that opened into its room opens into the new wall's
+ * room (and one that opened out still opens out); along the same wall it keeps its swing.
+ */
+export function moveMarkTo(objs: Obj[], m: Mark, c: Vec, maxDist: number): Mark | null {
+  const L = dist(m.a, m.b);
+  const s = placeOnWall(objs, c, L, maxDist);
+  if (!s) return null;
+  const wasVertical = Math.abs(m.a[0] - m.b[0]) < Math.abs(m.a[1] - m.b[1]);
+  const line = (q: Vec, vertical: boolean) => (vertical ? q[0] : q[1]);
+  // The same wall, give or take its thickness: a door on a shared wall may hop between faces.
+  if (s.vertical === wasVertical && Math.abs(line(s.a, s.vertical) - line(m.a, wasVertical)) < 1.5) {
+    const forward = wasVertical ? m.b[1] >= m.a[1] : m.b[0] >= m.a[0];
+    return forward ? { ...m, a: s.a, b: s.b } : { ...m, a: s.b, b: s.a };
+  }
+  const from = placeOnWall(objs, mid(m.a, m.b), L, 0.5);
+  const inward = !from || facing(m, m.swing ?? 1, from.inside) === m;
+  return facing({ ...m, a: s.a, b: s.b }, (m.swing ?? 1) * (inward ? 1 : -1), s.inside);
+}
+
+/**
+ * A hinged door's leaf drawn open at 90°: the hinge, where the free edge sits shut, and where it
+ * swings to. `t` is the wall thickness, so the leaf starts at the wall's face.
+ */
+export function doorLeaf(m: Mark, a: Vec = m.a, b: Vec = m.b, t = 0): { hinge: Vec; shut: Vec; open: Vec } | null {
+  if (m.kind !== "door" || !m.hinge) return null;
+  const L = dist(a, b);
+  if (L < 0.05) return null;
+  const k = m.swing ?? 1;
+  const n: Vec = [((b[1] - a[1]) / L) * k, (-(b[0] - a[0]) / L) * k];
+  const off = mul(n, t / 2);
+  const hinge = add(m.hinge === "a" ? a : b, off), shut = add(m.hinge === "a" ? b : a, off);
+  return { hinge, shut, open: add(hinge, mul(n, L)) };
+}
+
+/** The next of a door's four hinge/swing combinations, turning it a quarter at a time. */
+export function turnDoor(m: Mark, back = false): Mark {
+  const order: [Mark["hinge"], 1 | -1][] = [["a", 1], ["b", 1], ["b", -1], ["a", -1]];
+  const i = m.hinge ? order.findIndex(([h, s]) => h === m.hinge && s === (m.swing ?? 1)) : -1;
+  const [hinge, swing] = i < 0 ? order[0] : order[(i + (back ? 3 : 1)) % 4];
+  return { ...m, hinge, swing };
 }
 
 export function docBounds(levels: { objects: Obj[] }[]): Box {

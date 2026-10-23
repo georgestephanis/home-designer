@@ -2,12 +2,12 @@
 // doors/windows and dimension lines, and live measurements while you work.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  translate, uid,
+  MARK_WIDTH, translate, uid,
   type Dim, type Doc, type Item, type Level, type Mark, type MarkKind, type Obj, type Point, type Room, type Vec,
 } from "./model";
 import {
-  add, bbox, dist, fromLocal, itemCorners, mid, objPoints, polyArea, rayToPoly, rotate, roomAt, snap,
-  snapMarkToWall, toLocal, walledRooms,
+  add, bbox, dist, fromLocal, itemCorners, mid, moveMarkTo, newMarkOnWall, objPoints, polyArea, rayToPoly, rotate,
+  roomAt, snap, snapMarkToWall, toLocal, walledRooms,
 } from "./geometry";
 import { ART_STYLE, Compass, DimLine, LevelArt, type States } from "./render";
 import { fmtArea, fmtLen } from "./units";
@@ -43,7 +43,7 @@ export interface CanvasProps {
 
 type Drag =
   | { mode: "pan"; sx: number; sy: number; view: View }
-  | { mode: "move"; start: Vec; base: Doc; ids: string[]; moved: boolean }
+  | { mode: "move"; start: Vec; base: Doc; ids: string[]; moved: boolean; offWall?: boolean }
   | { mode: "vertex"; base: Doc; id: string; index: number }
   | { mode: "edge"; base: Doc; id: string; index: number; start: Vec }
   | { mode: "resize"; base: Doc; id: string; corner: Vec }
@@ -81,6 +81,7 @@ export function Canvas(p: CanvasProps) {
   const { cx, cy, scale } = p.view;
   const vb = { x: cx - size.w / 2 / scale, y: cy - size.h / 2 / scale, w: size.w / scale, h: size.h / scale };
   const px = 1 / scale; // one screen pixel, in feet
+  const wallReach = Math.max(1.5, 24 * px); // how far from a wall a door or window still lands on it
 
   const toWorld = useCallback((e: { clientX: number; clientY: number }): Vec => {
     const r = svgRef.current!.getBoundingClientRect();
@@ -249,6 +250,14 @@ export function Canvas(p: CanvasProps) {
         const baseLevel = d.base.levels.find((l) => l.id === p.level.id)!;
         const moving = baseLevel.objects.filter((o) => d.ids.includes(o.id));
         [dx, dy] = snapMove(moving, baseLevel.objects, dx, dy, p.snapOn && !e.altKey ? p.snapStep : 0, 7 / scale);
+        if (moving.length === 1 && moving[0].type === "mark") {
+          // A lone door or window slides along the nearest wall, onto another one if dragged there.
+          const m0 = moving[0];
+          const m1 = moveMarkTo(baseLevel.objects.filter((o) => o.id !== m0.id), m0, add(mid(m0.a, m0.b), [dx, dy]), wallReach);
+          setD({ ...d, moved: true, offWall: !m1 });
+          p.live(() => mapObjs(d.base, p.level.id, d.ids, (o) => m1 ?? translate(o, dx, dy)));
+          return;
+        }
         setD({ ...d, moved: true });
         p.live(() => mapObjs(d.base, p.level.id, d.ids, (o) => translate(o, dx, dy)));
         return;
@@ -359,7 +368,14 @@ export function Canvas(p: CanvasProps) {
     const d = dragRef.current;
     setD(null);
     if (!d) return;
-    if ("base" in d) { p.settle(d.base); return; }
+    if ("base" in d) {
+      if (d.mode === "move" && d.offWall) {
+        p.live(() => d.base);
+        p.toast("Doors and windows go on a wall: drop it near one.");
+      }
+      p.settle(d.base);
+      return;
+    }
     if (d.mode === "draw-rect") {
       const [a, b] = [d.start, d.cur];
       if (Math.abs(a[0] - b[0]) * scale < 4 && Math.abs(a[1] - b[1]) * scale < 4) {
@@ -370,6 +386,15 @@ export function Canvas(p: CanvasProps) {
       finishPoly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
     }
     if (d.mode === "draw-line") {
+      if (p.tool === "opening" && dist(d.start, d.cur) * scale < 4) {
+        // A click: place one of the usual width there.
+        const s = newMarkOnWall(objs, p.markKind, d.start, MARK_WIDTH[p.markKind], wallReach);
+        if (!s) { p.toast("Click on a wall to put a door or window there, or drag along it."); return; }
+        const m: Mark = { id: uid("mark"), type: "mark", kind: p.markKind, label: "", ...s };
+        p.commit((doc) => addObj(doc, p.level.id, m));
+        p.setSelection([m.id]);
+        return;
+      }
       if (dist(d.start, d.cur) < 0.1) return;
       if (p.tool === "measure") {
         const dim: Dim = { id: uid("dim"), type: "dim", label: "", a: d.start, b: d.cur, offset: 0 };
@@ -378,7 +403,9 @@ export function Canvas(p: CanvasProps) {
       } else {
         const s = snapMarkToWall(objs, d.start, d.cur, 1.5);
         if (!s) { p.toast("Draw doors and windows along a wall."); return; }
-        const m: Mark = { id: uid("mark"), type: "mark", kind: p.markKind, label: "", a: s.a, b: s.b };
+        // A drawn door keeps the width drawn and gets the hinge and swing a click would give it.
+        const door = p.markKind === "door" ? newMarkOnWall(objs, "door", mid(s.a, s.b), dist(s.a, s.b), 0.05) : null;
+        const m: Mark = { id: uid("mark"), type: "mark", kind: p.markKind, label: "", ...(door ?? s) };
         p.commit((doc) => addObj(doc, p.level.id, m));
         p.setSelection([m.id]);
       }
@@ -511,6 +538,17 @@ export function Canvas(p: CanvasProps) {
       const a = s?.a ?? drag.start, b = s?.b ?? drag.cur;
       ghost.push(<line key="gl2" className={`ghost-line${s ? "" : " bad"}`} x1={a[0]} y1={a[1]} x2={b[0]} y2={b[1]} style={{ strokeWidth: 8 * px }} />);
       ghost.push(<DimLine key="gd" className="dim live" a={a} b={b} offset={-22 * px} size={dimSize} />);
+    }
+  }
+  if (p.tool === "opening" && !drag && hover) {
+    // Where a click would put one.
+    const s = newMarkOnWall(objs, p.markKind, snapPt(hover, { altKey: false }), MARK_WIDTH[p.markKind], wallReach);
+    if (s) {
+      ghost.push(<line key="gp" className="ghost-line" x1={s.a[0]} y1={s.a[1]} x2={s.b[0]} y2={s.b[1]} style={{ strokeWidth: 8 * px }} />);
+      if (p.markKind === "door") {
+        const n = { id: "ghost", type: "mark" as const, kind: "door" as const, label: "", ...s };
+        ghost.push(<g key="gs" opacity={0.6}><LevelArt level={{ id: "ghost", title: "", objects: [n] }} wall={0} /></g>);
+      }
     }
   }
   if (drag?.mode === "marquee") {

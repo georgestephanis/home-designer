@@ -16,8 +16,14 @@ export interface Item {
   /** A Home Assistant entity shown here (e.g. "light.sofa"), when the plan lives in Home Assistant. */
   entity?: string;
 }
-/** A door, window or opening along a wall, from a to b. */
-export interface Mark { id: string; type: "mark"; kind: MarkKind; label: string; a: Vec; b: Vec }
+/**
+ * A door, window or opening along a wall, from a to b. A door with a `hinge` is drawn with its
+ * swing: hinged at that end, opening to the left of a→b (swing 1) or the right (swing -1).
+ */
+export interface Mark {
+  id: string; type: "mark"; kind: MarkKind; label: string; a: Vec; b: Vec;
+  hinge?: "a" | "b"; swing?: 1 | -1;
+}
 export interface Point {
   id: string; type: "point"; kind: PointKind; label: string; x: number; y: number;
   aim?: number; range?: number; entity?: string;
@@ -38,6 +44,11 @@ export const MARK_KINDS: MarkKind[] = [
   "window", "window-blocked", "window-maybe", "door", "garage", "blocked", "opening", "slider", "step",
 ];
 export const POINT_KINDS: PointKind[] = ["device", "ap", "lora", "thermo", "sensor"];
+
+/** How wide a door or window is when placed with a click, in feet. */
+export const MARK_WIDTH: Record<MarkKind, number> = {
+  window: 3, "window-blocked": 3, "window-maybe": 3, door: 3, garage: 9, blocked: 3, opening: 4, slider: 6, step: 3,
+};
 
 /** Rooms that get a wall band drawn around them. */
 export const WALLED: RoomKind[] = ["room", "hall", "wet", "closet", "stairs", "attic"];

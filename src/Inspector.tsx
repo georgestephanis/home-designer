@@ -5,7 +5,7 @@ import {
   ITEM_KINDS, KIND_LABEL, MARK_KINDS, POINT_KINDS, ROOM_KINDS,
   type Dim, type Item, type Mark, type Obj, type Point, type Room, type Text, type Vec,
 } from "./model";
-import { bbox, dist, polyArea } from "./geometry";
+import { bbox, dist, polyArea, turnDoor } from "./geometry";
 import { fmtArea, fmtLen, parseLen } from "./units";
 import type { EntityInfo } from "./host";
 import type { States } from "./render";
@@ -265,7 +265,8 @@ function MarkFields({ m, set, k }: { m: Mark; set: SetFn; k: string }) {
   const start = vertical ? Math.min(m.a[1], m.b[1]) : Math.min(m.a[0], m.b[0]);
   return (
     <>
-      <KindSelect id={`${k}-kind`} value={m.kind} kinds={MARK_KINDS} onCommit={(v) => upd((m) => ({ ...m, kind: v }))} />
+      <KindSelect id={`${k}-kind`} value={m.kind} kinds={MARK_KINDS}
+        onCommit={(v) => upd((m) => (v === "door" && !m.hinge ? { ...m, kind: v, hinge: "a", swing: 1 } : { ...m, kind: v }))} />
       <TextInput id={`${k}-label`} label="Label" value={m.label} placeholder="optional" onCommit={(v) => upd((m) => ({ ...m, label: v }))} />
       <div className="row2">
         <LengthInput id={`${k}-len`} label="Width" value={L} min={0.05} onCommit={(v) => upd((m) => {
@@ -277,9 +278,49 @@ function MarkFields({ m, set, k }: { m: Mark; set: SetFn; k: string }) {
           return vertical ? { ...m, a: [m.a[0], m.a[1] + d], b: [m.b[0], m.b[1] + d] } : { ...m, a: [m.a[0] + d, m.a[1]], b: [m.b[0] + d, m.b[1]] };
         })} />
       </div>
-      <p className="hint small">Drag it along its wall, or drag either end to resize it. Width changes keep it centred.</p>
+      {m.kind === "door" && (
+        <>
+          <label className="field" htmlFor={`${k}-hinge`}>
+            <span>Hinge</span>
+            <select id={`${k}-hinge`} value={m.hinge ? hingeSide(m, m.hinge) : ""}
+              onChange={(e) => upd((m) => {
+                const v = e.target.value;
+                if (!v) return { ...m, hinge: undefined, swing: undefined };
+                return { ...m, hinge: hingeSide(m, "a") === v ? "a" : "b", swing: m.swing ?? 1 };
+              })}>
+              <option value="">None (no swing drawn)</option>
+              <option value={vertical ? "north" : "west"}>{vertical ? "North" : "West"} end</option>
+              <option value={vertical ? "south" : "east"}>{vertical ? "South" : "East"} end</option>
+            </select>
+          </label>
+          {m.hinge && (
+            <div className="actions tight">
+              <button type="button" onClick={() => upd((m) => ({ ...m, hinge: m.hinge === "a" ? "b" : "a" }))}>Flip hinge</button>
+              <button type="button" onClick={() => upd((m) => ({ ...m, swing: (m.swing ?? 1) === 1 ? -1 : 1 }))}>Flip swing</button>
+              <button type="button" onClick={() => upd((m) => turnDoor(m))} title="Turn (R)">Turn</button>
+            </div>
+          )}
+          {m.hinge && <p className="readout">Opens to the {swingSide(m)}, hinged at the {hingeSide(m, m.hinge)} end.</p>}
+        </>
+      )}
+      <p className="hint small">Drag it along its wall or onto another one, or drag either end to resize it. Width changes keep it centred.
+        {m.kind === "door" ? " R turns a door through its four hinge and swing positions." : ""}</p>
     </>
   );
+}
+
+/** Which compass end of its wall a door's end is at. */
+function hingeSide(m: Mark, end: "a" | "b") {
+  const [p, q] = end === "a" ? [m.a, m.b] : [m.b, m.a];
+  const vertical = Math.abs(m.a[0] - m.b[0]) < Math.abs(m.a[1] - m.b[1]);
+  return vertical ? (p[1] < q[1] ? "north" : "south") : (p[0] < q[0] ? "west" : "east");
+}
+
+/** Which way a door opens: the compass side of its wall its leaf swings into. */
+function swingSide(m: Mark) {
+  const k = m.swing ?? 1;
+  const n = [(m.b[1] - m.a[1]) * k, -(m.b[0] - m.a[0]) * k];
+  return Math.abs(n[0]) > Math.abs(n[1]) ? (n[0] > 0 ? "east" : "west") : (n[1] > 0 ? "south" : "north");
 }
 
 function PointFields({ pt, set, k }: { pt: Point; set: SetFn; k: string }) {

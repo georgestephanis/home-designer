@@ -4,7 +4,7 @@ import { Inspector } from "./Inspector";
 import { CATALOG, GROUPS, type CatalogEntry } from "./catalog";
 import { useHistory } from "./history";
 import { MARK_KINDS, KIND_LABEL, blankDoc, isDoc, translate, uid, type Doc, type Item, type MarkKind, type Obj, type Point, type Vec } from "./model";
-import { docBounds, polyArea } from "./geometry";
+import { docBounds, polyArea, turnDoor } from "./geometry";
 import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
 import { Conflict, boundEntities, useStates, type Host } from "./host";
@@ -362,7 +362,8 @@ export default function App({ host }: { host?: Host }) {
       if (k === "escape") { used(); setSelection([]); setTool("select"); return; }
       if (k === "r" && selected.length) {
         used();
-        commit((d) => mapObjs(d, levelId, selection, (o) => (o.type === "item" ? { ...o, rot: ((o.rot + (e.shiftKey ? -90 : 90) + 540) % 360) - 180 } : o)));
+        commit((d) => mapObjs(d, levelId, selection, (o) => (o.type === "item" ? { ...o, rot: ((o.rot + (e.shiftKey ? -90 : 90) + 540) % 360) - 180 }
+          : o.type === "mark" && o.kind === "door" ? turnDoor(o, e.shiftKey) : o)));
         return;
       }
       if (k.startsWith("arrow") && selected.length) {
