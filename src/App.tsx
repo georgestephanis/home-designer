@@ -51,7 +51,7 @@ export default function App({ host }: { host?: Host }) {
   const [markKind, setMarkKind] = useState<MarkKind>("window");
   const [prefs, setPrefs] = useState<Prefs>(() => {
     const p = { ...DEFAULT_PREFS, ...load<Prefs>(PREFS_KEY) };
-    return p.paper in PAPERS ? p : { ...p, paper: DEFAULT_PREFS.paper };
+    return Object.hasOwn(PAPERS, p.paper) ? p : { ...p, paper: DEFAULT_PREFS.paper };
   });
   const [printing, setPrinting] = useState(false);
   const [lockStructure, setLock] = useState(false);

@@ -74,7 +74,8 @@ function ScaleBar({ scale }: { scale: number }) {
       {Array.from({ length: steps }, (_, i) => (
         <rect key={i} x={(i * w) / steps} y={0} width={w / steps} height={0.07} className={i % 2 ? "" : "fill"} />
       ))}
-      {[0, ft].map((n) => <text key={n} x={(n / ft) * w} y={0.24}>{n}′</text>)}
+      {/* The viewBox is in inches, so 0.11 user units is 0.11 in (about 8pt) on paper. */}
+      {[0, ft].map((n) => <text key={n} x={(n / ft) * w} y={0.24} fontSize={0.11}>{n}′</text>)}
     </svg>
   );
 }
@@ -141,7 +142,7 @@ h1 { margin: 0; font-size: 15pt; line-height: 1.1; }
 footer { grid-area: foot; display: flex; align-items: center; gap: 12pt; font-size: 8pt; color: #4b5563; border-top: 0.75pt solid #d1d5db; }
 footer .spacer { flex: 1; }
 .bar rect { fill: #fff; stroke: #1f2328; stroke-width: .01; } .bar rect.fill { fill: #1f2328; }
-.bar text { font-size: .11px; fill: #1f2328; text-anchor: middle; }
+.bar text { fill: #1f2328; text-anchor: middle; }
 @media screen { body { background: #888; } .sheet { background: #fff; margin: 0.25in auto; } }
 `;
   const body = levels.map((l, i) => <Sheet key={l.id} doc={doc} l={l} i={i} n={levels.length} layout={layout} o={o} date={date} />);
