@@ -457,11 +457,13 @@ export default function App({ host }: { host?: Host }) {
       </nav>
 
       <main className="stage" ref={stage}>
-        <div className="levels" role="tablist" aria-label="Floors">
-          {doc.levels.map((l) => (
-            <button key={l.id} role="tab" type="button" aria-selected={l.id === level.id} className={l.id === level.id ? "on" : ""}
-              onClick={() => switchLevel(l.id)} onDoubleClick={renameLevel}>{l.title}</button>
-          ))}
+        <div className="levels">
+          <div className="level-tabs" role="tablist" aria-label="Floors">
+            {doc.levels.map((l) => (
+              <button key={l.id} role="tab" type="button" aria-selected={l.id === level.id} className={l.id === level.id ? "on" : ""}
+                onClick={() => switchLevel(l.id)} onDoubleClick={renameLevel}>{l.title}</button>
+            ))}
+          </div>
           <details className="menu">
             <summary aria-label="Floor actions">⋯</summary>
             <div className="menu-list" onClick={(e) => (e.currentTarget.parentElement as HTMLDetailsElement).open = false}>
