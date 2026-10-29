@@ -8,6 +8,7 @@ import { docBounds, polyArea, turnDoor } from "./geometry";
 import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
 import { Conflict, boundEntities, useStates, type Host } from "./host";
+import { PAPERS, PrintDialog, defaultPaper, type Paper } from "./print";
 import sample from "./samples/sample.json";
 
 const DRAFT_KEY = "home-designer:draft";
@@ -21,8 +22,8 @@ const save = (key: string, v: unknown) => { try { localStorage.setItem(key, JSON
 
 const sampleDoc = () => structuredClone(sample) as unknown as Doc;
 
-interface Prefs { snapStep: number; snapOn: boolean; showGrid: boolean; showSizes: boolean; showBelow: boolean }
-const DEFAULT_PREFS: Prefs = { snapStep: 1 / 12, snapOn: true, showGrid: true, showSizes: true, showBelow: false };
+interface Prefs { snapStep: number; snapOn: boolean; showGrid: boolean; showSizes: boolean; showBelow: boolean; paper: Paper }
+const DEFAULT_PREFS: Prefs = { snapStep: 1 / 12, snapOn: true, showGrid: true, showSizes: true, showBelow: false, paper: defaultPaper() };
 
 type FileHandle = { name: string; createWritable?: () => Promise<{ write: (s: string) => Promise<void>; close: () => Promise<void> }> };
 type PickerWindow = Window & {
@@ -48,7 +49,11 @@ export default function App({ host }: { host?: Host }) {
   const [selection, setSelection] = useState<string[]>([]);
   const [tool, setTool] = useState<Tool>("select");
   const [markKind, setMarkKind] = useState<MarkKind>("window");
-  const [prefs, setPrefs] = useState<Prefs>(() => ({ ...DEFAULT_PREFS, ...load<Prefs>(PREFS_KEY) }));
+  const [prefs, setPrefs] = useState<Prefs>(() => {
+    const p = { ...DEFAULT_PREFS, ...load<Prefs>(PREFS_KEY) };
+    return Object.hasOwn(PAPERS, p.paper) ? p : { ...p, paper: DEFAULT_PREFS.paper };
+  });
+  const [printing, setPrinting] = useState(false);
   const [lockStructure, setLock] = useState(false);
   const [panel, setPanel] = useState<"inspect" | "add">("add");
   const [view, setView] = useState<View>({ cx: 10, cy: 20, scale: 14 });
@@ -352,6 +357,7 @@ export default function App({ host }: { host?: Host }) {
       if (mod && k === "y") { e.preventDefault(); redo(); return; }
       if (mod && k === "s") { e.preventDefault(); used(); if (host && !e.shiftKey) saveToHost(); else saveAs(e.shiftKey); return; }
       if (mod && k === "o") { e.preventDefault(); open(); return; }
+      if (mod && k === "p") { e.preventDefault(); used(); setPrinting(true); return; }
       if (mod && k === "a") { e.preventDefault(); setSelection(level.objects.filter((o) => !(lockStructure && (o.type === "room" || o.type === "mark"))).map((o) => o.id)); return; }
       if (mod && k === "c") { clip.current = structuredClone(selected); return; }
       if (mod && k === "x") { clip.current = structuredClone(selected); del(); return; }
@@ -424,6 +430,7 @@ export default function App({ host }: { host?: Host }) {
                 <button type="button" onClick={open} title="Open an SVG or JSON plan (Ctrl+O)">Open</button>
                 <button type="button" className="primary" onClick={() => saveAs(false)} title="Save as SVG (Ctrl+S)">Save</button>
               </>}
+          <button type="button" onClick={() => setPrinting(true)} title="Print one floor per page, at one scale (Ctrl+P)">Print</button>
           <details className="menu">
             <summary aria-label="More file actions">More</summary>
             <div className="menu-list" onClick={(e) => (e.currentTarget.parentElement as HTMLDetailsElement).open = false}>
@@ -516,6 +523,8 @@ export default function App({ host }: { host?: Host }) {
               onDelete={del} onDuplicate={() => paste(selected)} onFront={() => restack(true)} onBack={() => restack(false)} />
           : <CatalogPanel onAdd={(e) => addFromCatalog(e)} />}
       </aside>
+      {printing && <PrintDialog doc={doc} currentLevel={level.id} paper={prefs.paper}
+        onPaper={(paper) => setPrefs((p) => ({ ...p, paper }))} onClose={() => setPrinting(false)} />}
     </div>
   );
 }

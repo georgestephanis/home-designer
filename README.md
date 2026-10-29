@@ -32,11 +32,15 @@ again later, or view in any browser or vector editor. Nothing is uploaded anywhe
   - **Open** takes those SVGs, project `.json` files, or plain SVG floor plans; imported shapes
     become rooms. Dropping a file on the window opens it too.
   - Your work is kept as a draft in this browser between visits.
+- **Print:** one floor per page, every page at the same standard scale (¼″ = 1′, ⅛″ = 1′…) with
+  the plan in the same spot, so you can flip between floors and measure off the paper. Each page
+  has a scale bar, a north arrow, an optional 1′ grid and a ruled box for notes taken on site.
+  Pick the paper and the floors; the orientation and scale are chosen to fit. Print at 100%.
 
 Shortcuts: <kbd>V</kbd> select, <kbd>B</kbd> room, <kbd>W</kbd> door/window, <kbd>M</kbd> measure,
 <kbd>T</kbd> note, <kbd>R</kbd> rotate 90° (or turn a door), <kbd>F</kbd> fit, <kbd>G</kbd> grid, arrows nudge
 (<kbd>Shift</kbd> for a foot), <kbd>Ctrl</kbd>+<kbd>Z</kbd>/<kbd>Y</kbd>, <kbd>Ctrl</kbd>+<kbd>D</kbd>
-duplicate, <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd> save.
+duplicate, <kbd>Ctrl</kbd>+<kbd>C</kbd>/<kbd>V</kbd>, <kbd>Ctrl</kbd>+<kbd>S</kbd> save, <kbd>Ctrl</kbd>+<kbd>P</kbd> print.
 <kbd>Shift</kbd> keeps lines straight and adds to the selection, and <kbd>Alt</kbd> turns off snapping.
 
 ## In Home Assistant
