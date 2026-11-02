@@ -9,6 +9,8 @@ import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
 import { Conflict, boundEntities, useStates, type Host } from "./host";
 import { PAPERS, PrintDialog, defaultPaper, type Paper } from "./print";
+import { createAgentApi, type AgentApi } from "./agent";
+import { AGENT_GUIDE } from "./agent-guide";
 import sample from "./samples/sample.json";
 
 const DRAFT_KEY = "home-designer:draft";
@@ -170,6 +172,35 @@ export default function App({ host }: { host?: Host }) {
   };
 
   const switchLevel = (id: string) => { setLevelId(id); setSelection([]); };
+
+  // ---- window.homeDesigner (src/agent.ts) -------------------------------------------------
+  // The API is made once; it reaches the editor through refs, so calls made back to back see
+  // each other's edits before React has re-rendered.
+  const docRef = useRef(doc);
+  docRef.current = doc;
+  const levelRef = useRef(levelId);
+  levelRef.current = levelId;
+  const live_ = useRef({ openText: (_t: string, _n: string) => {}, saveToHost: async () => {} });
+  live_.current = { openText: (t, n) => openText(t, n), saveToHost };
+  const [guideOpen, setGuideOpen] = useState(false);
+  useEffect(() => {
+    const api = createAgentApi({
+      doc: () => docRef.current,
+      commit: (next) => { docRef.current = next; commit(next); },
+      undo, redo,
+      level: () => levelRef.current,
+      setLevel: (id) => { levelRef.current = id; switchLevel(id); },
+      load: (t, n) => live_.current.openText(t, n),
+      // Wait for the last edits to render, so the save carries them.
+      ...(host ? {
+        save: () => new Promise<void>((ok) => setTimeout(ok, 50)).then(() => live_.current.saveToHost()),
+        entities: () => host.entities(),
+      } : {}),
+    });
+    const w = window as Window & { homeDesigner?: AgentApi };
+    w.homeDesigner = api;
+    return () => { if (w.homeDesigner === api) delete w.homeDesigner; };
+  }, [host]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Files ------------------------------------------------------------------------------
   const openText = (text: string, name: string) => {
@@ -404,6 +435,8 @@ export default function App({ host }: { host?: Host }) {
     <hr />
     <button type="button" onClick={newDoc}>New empty plan</button>
     <button type="button" onClick={loadSample}>Open the sample house</button>
+    <hr />
+    <button type="button" onClick={() => setGuideOpen(true)}>Using an AI agent?</button>
   </>;
 
   return (
@@ -525,7 +558,28 @@ export default function App({ host }: { host?: Host }) {
       </aside>
       {printing && <PrintDialog doc={doc} currentLevel={level.id} paper={prefs.paper}
         onPaper={(paper) => setPrefs((p) => ({ ...p, paper }))} onClose={() => setPrinting(false)} />}
+      {guideOpen && <AgentGuideDialog onClose={() => setGuideOpen(false)} />}
+      {/* For AI agents reading the page: how to drive the editor (the same text as the dialog). */}
+      <section id="agent-guide" className="visually-hidden" aria-label="Instructions for AI agents">
+        <pre>{AGENT_GUIDE}</pre>
+      </section>
     </div>
+  );
+}
+
+function AgentGuideDialog({ onClose }: { onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { ref.current?.showModal(); }, []);
+  return (
+    <dialog ref={ref} className="print-dialog agent-dialog" onClose={onClose} onKeyDown={(e) => e.stopPropagation()} aria-labelledby="agent-title">
+      <form method="dialog">
+        <h2 id="agent-title">Using an AI agent</h2>
+        <p className="hint small">A browser agent (Claude in Chrome, for one) can change this plan for you through a console API,
+          <code>window.homeDesigner</code>. Ask it to read <code>homeDesigner.help()</code> first. Everything it does can be undone.</p>
+        <pre className="agent-guide">{AGENT_GUIDE}</pre>
+        <div className="actions"><button type="submit" className="primary">Close</button></div>
+      </form>
+    </dialog>
   );
 }
 

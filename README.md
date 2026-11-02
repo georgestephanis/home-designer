@@ -78,6 +78,25 @@ The built frontend (`custom_components/home_designer/frontend/home-designer.js`)
 so no build step is needed. After changing anything in `src/`, rebuild it with
 `npm run build:ha`.
 
+## Driving it from the console (and AI agents)
+
+The editor has a JavaScript API at `window.homeDesigner`, in the standalone app and in the Home Assistant panel. A browser agent (Claude in Chrome, for one), or you at the console, can change the plan with it, and every change can be undone with Ctrl+Z like any other. Run `homeDesigner.help()` for the full guide. The same text is under **More → Using an AI agent?**, and is on the page (visually hidden) for agents that read it.
+
+```js
+homeDesigner.levels()                                         // floors and their rooms
+homeDesigner.batch(hd => {                                    // one undo step
+  hd.addRoom({ label: "Bedroom", x: 20, y: 0, w: 12, h: 10 })  // feet; x,y = north-west corner
+  hd.addCloset({ room: "Bedroom", spot: "ne", w: 4, h: 2 })
+  hd.addOnWall("door", { room: "Bedroom", side: "s", at: 3 })
+  hd.addItem({ catalog: "Queen bed", room: "Bedroom", spot: "w" })
+})
+homeDesigner.addPoint({ kind: "sensor", room: "Bedroom", entity: "binary_sensor.bedroom_motion" })
+homeDesigner.setWall(0.5)                                     // wall thickness, feet
+homeDesigner.exportSvg()                                      // or save() inside Home Assistant
+```
+
+Calls check their input and throw a `HomeDesignerError` that explains what's wrong, without half-applying anything. Results are copies. The API lives in `src/agent.ts`, and the guide in `src/agent-guide.ts`.
+
 ## Develop
 
 ```bash
