@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pointInPoly, polyArea, rayToPoly, snapMarkToWall, wallSpan } from "../geometry";
+import { closetHost, pointInPoly, polyArea, rayToPoly, snapMarkToWall, wallSpan } from "../geometry";
 import { setEdgeLength } from "../Inspector";
 import type { Room } from "../model";
 
@@ -61,5 +61,22 @@ describe("setEdgeLength", () => {
     const L: Room = { ...A, points: [[0, 0], [10, 0], [10, 5], [6, 5], [6, 10], [0, 10]] };
     const r = setEdgeLength(L, 0, 12);
     expect(r.points).toEqual([[0, 0], [12, 0], [12, 5], [6, 5], [6, 10], [0, 10]]);
+  });
+});
+
+describe("closetHost", () => {
+  const rect = (id: string, kind: Room["kind"], x0: number, y0: number, x1: number, y1: number): Room =>
+    ({ id, type: "room", kind, label: id, points: [[x0, y0], [x1, y0], [x1, y1], [x0, y1]] });
+  const bed = rect("bed", "room", 0, 0, 14, 12);
+  const inside = rect("in", "closet", 0, 9, 4, 12);
+  const apart = rect("apart", "closet", 14.5, 0, 18, 4);
+
+  it("finds the room a closet was drawn inside", () => {
+    expect(closetHost(inside, [bed, inside, apart])?.id).toBe("bed");
+  });
+
+  it("leaves a closet that is its own room, and anything that isn't a closet, alone", () => {
+    expect(closetHost(apart, [bed, inside, apart])).toBeNull();
+    expect(closetHost(rect("r", "room", 1, 1, 3, 3), [bed])).toBeNull();
   });
 });

@@ -82,6 +82,19 @@ export function walledRooms(objs: Obj[]): Room[] {
   return objs.filter((o): o is Room => o.type === "room" && WALLED.includes(o.kind));
 }
 
+/**
+ * The room a closet was drawn inside of, if any: the smallest other walled room holding its
+ * centre. Such a closet gets its own walls over that room instead of being hidden by it.
+ */
+export function closetHost(r: Room, rooms: Room[]): Room | null {
+  if (r.kind !== "closet") return null;
+  const b = bbox(r.points), c: Vec = [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2], area = polyArea(r.points);
+  const hosts = rooms.filter((o) => o !== r && o.kind !== "closet" && WALLED.includes(o.kind)
+    && polyArea(o.points) > area && pointInPoly(c, o.points));
+  hosts.sort((a, b) => polyArea(a.points) - polyArea(b.points));
+  return hosts[0] ?? null;
+}
+
 /** The smallest walled (or outside) room containing p. */
 export function roomAt(objs: Obj[], p: Vec): Room | null {
   const rooms = objs.filter((o): o is Room => o.type === "room" && o.kind !== "labelonly" && pointInPoly(p, o.points));

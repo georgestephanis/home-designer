@@ -3,8 +3,8 @@ import { Canvas, addObj, mapObjs, type Tool, type View } from "./Canvas";
 import { Inspector } from "./Inspector";
 import { CATALOG, GROUPS, type CatalogEntry } from "./catalog";
 import { useHistory } from "./history";
-import { MARK_KINDS, KIND_LABEL, blankDoc, isDoc, translate, uid, type Doc, type Item, type MarkKind, type Obj, type Point, type Vec } from "./model";
-import { docBounds, polyArea, turnDoor } from "./geometry";
+import { MARK_KINDS, KIND_LABEL, blankDoc, isDoc, translate, uid, type Doc, type Item, type MarkKind, type Obj, type Point, type Room, type Vec } from "./model";
+import { closetHost, docBounds, polyArea, turnDoor } from "./geometry";
 import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
 import { Conflict, boundEntities, useStates, type Host } from "./host";
@@ -387,8 +387,12 @@ export default function App({ host }: { host?: Host }) {
 
   const states = useStates(host, useMemo(() => boundEntities(level.objects), [level]));
 
-  const roomsArea = useMemo(() => level.objects.reduce((s, o) =>
-    s + (o.type === "room" && ["room", "hall", "wet", "closet"].includes(o.kind) ? polyArea(o.points) : 0), 0), [level]);
+  // A closet inside a room is already counted in that room's area.
+  const roomsArea = useMemo(() => {
+    const rooms = level.objects.filter((o): o is Room => o.type === "room");
+    return rooms.reduce((s, r) =>
+      s + (["room", "hall", "wet", "closet"].includes(r.kind) && !closetHost(r, rooms) ? polyArea(r.points) : 0), 0);
+  }, [level]);
 
   if (host && !saved) return <div className="app loading">Loading the plan from {host.name}…{toastMsg && <div className="toast" role="status">{toastMsg}</div>}</div>;
 
