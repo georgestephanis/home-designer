@@ -2,7 +2,7 @@
 // the editor. All sizes are in feet (the SVG user unit); exports scale 1 ft = 30 px.
 import type { ReactNode } from "react";
 import { WALLED, type Dim, type Item, type Level, type Mark, type Obj, type Point, type Room, type Text, type Vec } from "./model";
-import { bbox, dist, doorLeaf, mid, rad, roomAt, wallSpan } from "./geometry";
+import { bbox, closetHost, dist, doorLeaf, mid, rad, roomAt, wallSpan } from "./geometry";
 import { fmtLen } from "./units";
 
 export const PX_PER_FT = 30;
@@ -338,6 +338,10 @@ export function LevelArt({ level, wall, states, hideBound }: { level: Level; wal
   // the rooms, so the gaps between rooms read as interior walls and the outer band as the shell.
   // On a rectangle this is gen.py's grown bounding box; other shapes get walls that follow them.
   const walled = rooms.filter((r) => WALLED.includes(r.kind));
+  // A closet drawn inside a room would vanish under that room's fill, so it's painted after the
+  // rooms with its own wall. As with the rooms, the closet's fill covers the inner half of the
+  // stroke, so a stroke of twice the wall thickness leaves a wall `wall` thick showing.
+  const closets = new Set(rooms.filter((r) => closetHost(r, rooms)));
 
   for (const r of rooms) if (r.label) labels.push(roomLabel(r.label, r.points, r.kind === "labelonly" ? "hall" : r.kind, r.id));
   for (const it of items) labels.push(itemLabel(it));
@@ -350,9 +354,12 @@ export function LevelArt({ level, wall, states, hideBound }: { level: Level; wal
 
   return (
     <g className="level" data-level={level.id}>
-      {walled.map((r) => <polygon key={`w-${r.id}`} className="wall" points={ptsAttr(r.points)}
+      {walled.filter((r) => !closets.has(r)).map((r) => <polygon key={`w-${r.id}`} className="wall" points={ptsAttr(r.points)}
         style={{ stroke: "var(--wall)", strokeWidth: wall * 2, strokeLinejoin: "miter", strokeMiterlimit: 20 }} />)}
-      {rooms.map((r) => <RoomShape key={r.id} r={r} />)}
+      {rooms.filter((r) => !closets.has(r)).map((r) => <RoomShape key={r.id} r={r} />)}
+      {[...closets].map((r) => <polygon key={`w-${r.id}`} className="wall" points={ptsAttr(r.points)}
+        style={{ stroke: "var(--wall)", strokeWidth: wall * 2, strokeLinejoin: "miter", strokeMiterlimit: 20 }} />)}
+      {[...closets].map((r) => <RoomShape key={r.id} r={r} />)}
       {glows.map(({ room, n }) => <polygon key={`g-${room.id}`} className="glow" points={ptsAttr(room.points)}
         style={{ fillOpacity: 1 - (1 - 0.35 / Math.sqrt(n)) ** n }} />)}
       {items.map((it) => <ItemShape key={it.id} it={it} />)}
