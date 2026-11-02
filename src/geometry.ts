@@ -82,6 +82,36 @@ export function walledRooms(objs: Obj[]): Room[] {
   return objs.filter((o): o is Room => o.type === "room" && WALLED.includes(o.kind));
 }
 
+/**
+ * A point inside a polygon, even a concave one (where the bounding-box centre may be outside):
+ * the middle of the first stretch inside along a horizontal line through the box's middle.
+ */
+export function interiorPoint(points: Vec[]): Vec {
+  const b = bbox(points);
+  // Nudged off the exact middle so the line doesn't pass through a vertex on a symmetric shape.
+  const y = (b.y0 + b.y1) / 2 + (b.y1 - b.y0) * 1e-4;
+  const xs: number[] = [];
+  for (let i = 0; i < points.length; i++) {
+    const [x0, y0] = points[i], [x1, y1] = points[(i + 1) % points.length];
+    if ((y0 > y) !== (y1 > y)) xs.push(x0 + ((y - y0) * (x1 - x0)) / (y1 - y0));
+  }
+  xs.sort((p, q) => p - q);
+  return xs.length >= 2 ? [(xs[0] + xs[1]) / 2, y] : [(b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2];
+}
+
+/**
+ * The room a closet was drawn inside of, if any: the smallest other walled room holding its
+ * centre. Such a closet gets its own walls over that room instead of being hidden by it.
+ */
+export function closetHost(r: Room, rooms: Room[]): Room | null {
+  if (r.kind !== "closet") return null;
+  const c = interiorPoint(r.points), area = polyArea(r.points);
+  const hosts = rooms.filter((o) => o !== r && o.kind !== "closet" && WALLED.includes(o.kind)
+    && polyArea(o.points) > area && pointInPoly(c, o.points));
+  hosts.sort((a, b) => polyArea(a.points) - polyArea(b.points));
+  return hosts[0] ?? null;
+}
+
 /** The smallest walled (or outside) room containing p. */
 export function roomAt(objs: Obj[], p: Vec): Room | null {
   const rooms = objs.filter((o): o is Room => o.type === "room" && o.kind !== "labelonly" && pointInPoly(p, o.points));
