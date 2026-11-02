@@ -9,6 +9,8 @@ import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
 import { Conflict, boundEntities, useStates, type Host } from "./host";
 import { PAPERS, PrintDialog, defaultPaper, type Paper } from "./print";
+import { createAgentApi, type AgentApi } from "./agent";
+import { AGENT_GUIDE } from "./agent-guide";
 import sample from "./samples/sample.json";
 
 const DRAFT_KEY = "home-designer:draft";
@@ -147,22 +149,33 @@ export default function App({ host }: { host?: Host }) {
     });
   }, [host]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveToHost = async () => {
-    if (!host || saving) return;
+  /**
+   * Saves `d` (the plan on screen unless given). The Save button shows failures as a toast;
+   * `rethrow` (the console API) also rejects, so the caller knows. Resolves true once saved.
+   */
+  const saveToHost = async (d: Doc = doc, rethrow = false): Promise<boolean> => {
+    if (!host) return false;
+    if (savingRef.current) { if (rethrow) throw new Error("a save is already in progress"); return false; }
     setSaving(true);
     savingRef.current = true;
     try {
       try {
-        rev.current = await host.save(doc, rev.current);
+        rev.current = await host.save(d, rev.current);
       } catch (err) {
         if (!(err instanceof Conflict)) throw err;
-        if (!confirm("The plan was saved from somewhere else since you opened it. Replace that version with yours?")) return;
-        rev.current = await host.save(doc, -1);
+        if (!confirm("The plan was saved from somewhere else since you opened it. Replace that version with yours?")) {
+          if (rethrow) throw new Error("not saved: the plan changed elsewhere and the person kept that version");
+          return false;
+        }
+        rev.current = await host.save(d, -1);
       }
-      setSaved(doc);
+      setSaved(d);
       toast(`Saved to ${host.name}.`);
+      return true;
     } catch (err) {
       toast(`Couldn't save: ${(err as Error).message}`);
+      if (rethrow) throw err;
+      return false;
     } finally {
       setSaving(false);
       savingRef.current = false;
@@ -170,6 +183,35 @@ export default function App({ host }: { host?: Host }) {
   };
 
   const switchLevel = (id: string) => { setLevelId(id); setSelection([]); };
+
+  // ---- window.homeDesigner (src/agent.ts) -------------------------------------------------
+  // The API is made once; it reaches the editor through refs, so calls made back to back see
+  // each other's edits before React has re-rendered.
+  const docRef = useRef(doc);
+  docRef.current = doc;
+  const levelRef = useRef(levelId);
+  levelRef.current = levelId;
+  const live_ = useRef({ openText: (_t: string, _n: string) => {}, saveToHost: async (_d?: Doc, _r?: boolean) => false });
+  live_.current = { openText: (t, n) => openText(t, n), saveToHost };
+  const [guideOpen, setGuideOpen] = useState(false);
+  useEffect(() => {
+    const api = createAgentApi({
+      doc: () => docRef.current,
+      commit: (next) => { docRef.current = next; commit(next); },
+      undo, redo,
+      level: () => levelRef.current,
+      setLevel: (id) => { levelRef.current = id; switchLevel(id); },
+      load: (t, n) => live_.current.openText(t, n),
+      // Saves docRef, which already holds edits React hasn't rendered yet.
+      ...(host ? {
+        save: async () => { await live_.current.saveToHost(docRef.current, true); },
+        entities: () => host.entities(),
+      } : {}),
+    });
+    const w = window as Window & { homeDesigner?: AgentApi };
+    w.homeDesigner = api;
+    return () => { if (w.homeDesigner === api) delete w.homeDesigner; };
+  }, [host]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- Files ------------------------------------------------------------------------------
   const openText = (text: string, name: string) => {
@@ -408,6 +450,8 @@ export default function App({ host }: { host?: Host }) {
     <hr />
     <button type="button" onClick={newDoc}>New empty plan</button>
     <button type="button" onClick={loadSample}>Open the sample house</button>
+    <hr />
+    <button type="button" onClick={() => setGuideOpen(true)}>Using an AI agent?</button>
   </>;
 
   return (
@@ -428,7 +472,7 @@ export default function App({ host }: { host?: Host }) {
           {host
             ? <>
                 <span className={`save-state${dirty ? " dirty" : ""}`} role="status">{saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}</span>
-                <button type="button" className="primary" onClick={saveToHost} disabled={saving || !dirty} title={`Save to ${host.name} (Ctrl+S)`}>Save</button>
+                <button type="button" className="primary" onClick={() => saveToHost()} disabled={saving || !dirty} title={`Save to ${host.name} (Ctrl+S)`}>Save</button>
               </>
             : <>
                 <button type="button" onClick={open} title="Open an SVG or JSON plan (Ctrl+O)">Open</button>
@@ -529,7 +573,28 @@ export default function App({ host }: { host?: Host }) {
       </aside>
       {printing && <PrintDialog doc={doc} currentLevel={level.id} paper={prefs.paper}
         onPaper={(paper) => setPrefs((p) => ({ ...p, paper }))} onClose={() => setPrinting(false)} />}
+      {guideOpen && <AgentGuideDialog onClose={() => setGuideOpen(false)} />}
+      {/* For AI agents reading the page: how to drive the editor (the same text as the dialog). */}
+      <section id="agent-guide" className="visually-hidden" aria-label="Instructions for AI agents">
+        <pre>{AGENT_GUIDE}</pre>
+      </section>
     </div>
+  );
+}
+
+function AgentGuideDialog({ onClose }: { onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => { ref.current?.showModal(); }, []);
+  return (
+    <dialog ref={ref} className="print-dialog agent-dialog" onClose={onClose} onKeyDown={(e) => e.stopPropagation()} aria-labelledby="agent-title">
+      <form method="dialog">
+        <h2 id="agent-title">Using an AI agent</h2>
+        <p className="hint small">A browser agent (Claude in Chrome, for one) can change this plan for you through a console API,
+          <code>window.homeDesigner</code>. Ask it to read <code>homeDesigner.help()</code> first. Everything it does can be undone.</p>
+        <pre className="agent-guide">{AGENT_GUIDE}</pre>
+        <div className="actions"><button type="submit" className="primary">Close</button></div>
+      </form>
+    </dialog>
   );
 }
 

@@ -203,3 +203,8 @@ button.danger { color: var(--ui-danger); }
   .viewbar { gap: 6px 10px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* On the page for agents and screen readers, not drawn. */
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.agent-dialog { width: min(760px, calc(100% - 32px)); }
+.agent-guide { margin: 0; max-height: 60vh; overflow: auto; font-size: 12px; line-height: 1.45; white-space: pre-wrap; background: var(--ui-bg); border: 1px solid var(--ui-line); border-radius: 8px; padding: 10px 12px; }
