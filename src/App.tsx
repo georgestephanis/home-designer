@@ -149,22 +149,33 @@ export default function App({ host }: { host?: Host }) {
     });
   }, [host]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveToHost = async () => {
-    if (!host || saving) return;
+  /**
+   * Saves `d` (the plan on screen unless given). The Save button shows failures as a toast;
+   * `rethrow` (the console API) also rejects, so the caller knows. Resolves true once saved.
+   */
+  const saveToHost = async (d: Doc = doc, rethrow = false): Promise<boolean> => {
+    if (!host) return false;
+    if (savingRef.current) { if (rethrow) throw new Error("a save is already in progress"); return false; }
     setSaving(true);
     savingRef.current = true;
     try {
       try {
-        rev.current = await host.save(doc, rev.current);
+        rev.current = await host.save(d, rev.current);
       } catch (err) {
         if (!(err instanceof Conflict)) throw err;
-        if (!confirm("The plan was saved from somewhere else since you opened it. Replace that version with yours?")) return;
-        rev.current = await host.save(doc, -1);
+        if (!confirm("The plan was saved from somewhere else since you opened it. Replace that version with yours?")) {
+          if (rethrow) throw new Error("not saved: the plan changed elsewhere and the person kept that version");
+          return false;
+        }
+        rev.current = await host.save(d, -1);
       }
-      setSaved(doc);
+      setSaved(d);
       toast(`Saved to ${host.name}.`);
+      return true;
     } catch (err) {
       toast(`Couldn't save: ${(err as Error).message}`);
+      if (rethrow) throw err;
+      return false;
     } finally {
       setSaving(false);
       savingRef.current = false;
@@ -180,7 +191,7 @@ export default function App({ host }: { host?: Host }) {
   docRef.current = doc;
   const levelRef = useRef(levelId);
   levelRef.current = levelId;
-  const live_ = useRef({ openText: (_t: string, _n: string) => {}, saveToHost: async () => {} });
+  const live_ = useRef({ openText: (_t: string, _n: string) => {}, saveToHost: async (_d?: Doc, _r?: boolean) => false });
   live_.current = { openText: (t, n) => openText(t, n), saveToHost };
   const [guideOpen, setGuideOpen] = useState(false);
   useEffect(() => {
@@ -191,9 +202,9 @@ export default function App({ host }: { host?: Host }) {
       level: () => levelRef.current,
       setLevel: (id) => { levelRef.current = id; switchLevel(id); },
       load: (t, n) => live_.current.openText(t, n),
-      // Wait for the last edits to render, so the save carries them.
+      // Saves docRef, which already holds edits React hasn't rendered yet.
       ...(host ? {
-        save: () => new Promise<void>((ok) => setTimeout(ok, 50)).then(() => live_.current.saveToHost()),
+        save: async () => { await live_.current.saveToHost(docRef.current, true); },
         entities: () => host.entities(),
       } : {}),
     });
@@ -457,7 +468,7 @@ export default function App({ host }: { host?: Host }) {
           {host
             ? <>
                 <span className={`save-state${dirty ? " dirty" : ""}`} role="status">{saving ? "Saving…" : dirty ? "Unsaved changes" : "Saved"}</span>
-                <button type="button" className="primary" onClick={saveToHost} disabled={saving || !dirty} title={`Save to ${host.name} (Ctrl+S)`}>Save</button>
+                <button type="button" className="primary" onClick={() => saveToHost()} disabled={saving || !dirty} title={`Save to ${host.name} (Ctrl+S)`}>Save</button>
               </>
             : <>
                 <button type="button" onClick={open} title="Open an SVG or JSON plan (Ctrl+O)">Open</button>

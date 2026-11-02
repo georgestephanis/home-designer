@@ -41,10 +41,23 @@ const oneOf = <T extends string>(v: unknown, list: readonly T[], what: string): 
   (list as readonly unknown[]).includes(v) ? v as T : fail(`unknown ${what} ${JSON.stringify(v)}; ${what} is one of: ${list.join(", ")}`);
 const ID_PREFIX: Record<Obj["type"], string> = { room: "room", item: "item", mark: "mark", point: "pt", dim: "dim", text: "text" };
 
+/** The fields each object type may have; anything else is refused, so a typo can't slip in. */
+const FIELDS: Record<Obj["type"], readonly string[]> = {
+  room: ["kind", "points"],
+  item: ["kind", "shape", "cx", "cy", "w", "h", "rot", "glyph", "entity"],
+  mark: ["kind", "a", "b", "hinge", "swing"],
+  point: ["kind", "x", "y", "entity", "aim", "range"],
+  dim: ["a", "b", "offset"],
+  text: ["x", "y", "size"],
+};
+
 /** Checks a whole object against the model, filling defaults, and throws on anything off. */
 export function validate(o: Partial<Obj> & { type?: string }): Obj {
   if (!o || typeof o !== "object") fail("expected an object");
   const type = oneOf(o.type, ["room", "item", "mark", "point", "dim", "text"] as const, "type");
+  const allowed = ["id", "type", "label", ...FIELDS[type]];
+  const extra = Object.keys(o).filter((k) => !allowed.includes(k) && (o as Record<string, unknown>)[k] !== undefined);
+  if (extra.length) fail(`a ${type} has no field${extra.length > 1 ? "s" : ""} ${extra.map((k) => JSON.stringify(k)).join(", ")}; its fields are: ${allowed.join(", ")}`);
   const base = { ...o, id: o.id ?? uid(ID_PREFIX[type]), label: o.label ?? "" } as Obj;
   if (typeof base.label !== "string") fail("label must be a string");
   const vec = (v: unknown, what: string): Vec =>
@@ -288,7 +301,13 @@ export function createAgentApi(bridge: Bridge) {
     /** Opens a plan from SVG or JSON text, replacing this one (as Open does). */
     load(text: string, name = "plan.svg"): void { if (pending) fail("can't load inside batch()"); bridge.load(text, name); },
     /** Saves to Home Assistant (only there). */
-    async save(): Promise<void> { if (!bridge.save) fail("save() works inside Home Assistant; here, use exportSvg() or the Save button"); await bridge.save!(); },
+    async save(): Promise<void> {
+      if (!bridge.save) fail("save() works inside Home Assistant; here, use exportSvg() or the Save button");
+      if (pending) fail("can't save inside batch(); save after it returns");
+      try { await bridge.save!(); } catch (err) {
+        throw err instanceof AgentError ? err : new AgentError(`couldn't save to Home Assistant: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    },
     /** Home Assistant entities, optionally filtered by id/name substring or domain ("binary_sensor."). */
     entities(filter?: string): EntityInfo[] {
       if (!bridge.entities) fail("entities() works inside Home Assistant");

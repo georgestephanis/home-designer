@@ -91,6 +91,31 @@ describe("homeDesigner API", () => {
     expect(h.commits()).toBe(1);
   });
 
+  it("refuses fields an object doesn't have, so a typo isn't saved into the plan", () => {
+    const h = harness();
+    const r = h.api.addRoom({ label: "Den", x: 0, y: 0, w: 10, h: 10 });
+    expect(() => h.api.update(r.id, { labell: "Study" } as never)).toThrow(/no field "labell"; its fields are: id, type, label/);
+    expect(() => h.api.add({ type: "point", x: 1, y: 1, entiy: "light.x" } as never)).toThrow(/"entiy"/);
+    expect(h.api.get(r.id)).not.toHaveProperty("labell");
+    expect(h.commits()).toBe(1);
+  });
+
+  it("reports a failed save as a HomeDesignerError, and refuses to save mid-batch", async () => {
+    const h = harness();
+    const bridge = { doc: h.doc, commit: () => {}, undo: () => {}, redo: () => {}, level: () => "floor1", setLevel: () => {}, load: () => {} };
+    const failing = createAgentApi({ ...bridge, save: async () => { throw new Error("401 Unauthorized"); } });
+    await expect(failing.save()).rejects.toThrow(AgentError);
+    await expect(failing.save()).rejects.toThrow(/couldn't save to Home Assistant: 401 Unauthorized/);
+    let saves = 0;
+    const ok = createAgentApi({ ...bridge, save: async () => { saves++; } });
+    await ok.save();
+    expect(saves).toBe(1);
+    let mid: Promise<void> | undefined;
+    ok.batch(() => { mid = ok.save(); });
+    await expect(mid).rejects.toThrow(/inside batch/);
+    expect(saves).toBe(1);
+  });
+
   it("hands out copies, so changing a result doesn't change the plan", () => {
     const h = harness();
     const r = h.api.addRoom({ label: "Den", x: 0, y: 0, w: 10, h: 10 });
