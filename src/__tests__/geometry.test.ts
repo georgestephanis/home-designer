@@ -75,6 +75,16 @@ describe("closetHost", () => {
     expect(closetHost(inside, [bed, inside, apart])?.id).toBe("bed");
   });
 
+  it("finds the host of an L-shaped closet whose bounding-box centre is outside the room", () => {
+    // An L-shaped room, with an L-shaped closet tucked into its inside corner. The closet's
+    // bounding-box centre, (11, 6), falls in the part of the box the room doesn't cover.
+    const room: Room = { id: "room", type: "room", kind: "room", label: "room",
+      points: [[0, 0], [16, 0], [16, 4], [8, 4], [8, 12], [0, 12]] };
+    const ell: Room = { id: "ell", type: "room", kind: "closet", label: "ell",
+      points: [[6, 2], [16, 2], [16, 4], [8, 4], [8, 10], [6, 10]] };
+    expect(closetHost(ell, [room, ell])?.id).toBe("room");
+  });
+
   it("leaves a closet that is its own room, and anything that isn't a closet, alone", () => {
     expect(closetHost(apart, [bed, inside, apart])).toBeNull();
     expect(closetHost(rect("r", "room", 1, 1, 3, 3), [bed])).toBeNull();

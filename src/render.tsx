@@ -339,7 +339,8 @@ export function LevelArt({ level, wall, states, hideBound }: { level: Level; wal
   // On a rectangle this is gen.py's grown bounding box; other shapes get walls that follow them.
   const walled = rooms.filter((r) => WALLED.includes(r.kind));
   // A closet drawn inside a room would vanish under that room's fill, so it's painted after the
-  // rooms with its own interior wall: half the stroke shows, the same thickness as the gaps.
+  // rooms with its own wall. As with the rooms, the closet's fill covers the inner half of the
+  // stroke, so a stroke of twice the wall thickness leaves a wall `wall` thick showing.
   const closets = new Set(rooms.filter((r) => closetHost(r, rooms)));
 
   for (const r of rooms) if (r.label) labels.push(roomLabel(r.label, r.points, r.kind === "labelonly" ? "hall" : r.kind, r.id));
@@ -357,7 +358,7 @@ export function LevelArt({ level, wall, states, hideBound }: { level: Level; wal
         style={{ stroke: "var(--wall)", strokeWidth: wall * 2, strokeLinejoin: "miter", strokeMiterlimit: 20 }} />)}
       {rooms.filter((r) => !closets.has(r)).map((r) => <RoomShape key={r.id} r={r} />)}
       {[...closets].map((r) => <polygon key={`w-${r.id}`} className="wall" points={ptsAttr(r.points)}
-        style={{ stroke: "var(--wall)", strokeWidth: wall, strokeLinejoin: "miter", strokeMiterlimit: 20 }} />)}
+        style={{ stroke: "var(--wall)", strokeWidth: wall * 2, strokeLinejoin: "miter", strokeMiterlimit: 20 }} />)}
       {[...closets].map((r) => <RoomShape key={r.id} r={r} />)}
       {glows.map(({ room, n }) => <polygon key={`g-${room.id}`} className="glow" points={ptsAttr(room.points)}
         style={{ fillOpacity: 1 - (1 - 0.35 / Math.sqrt(n)) ** n }} />)}
