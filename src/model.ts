@@ -80,6 +80,27 @@ export function isDoc(d: unknown): d is Doc {
     x.levels.every((l) => l && typeof l.id === "string" && Array.isArray(l.objects));
 }
 
+/**
+ * Give any object whose id repeats an earlier one a fresh id. Objects sharing an id are
+ * selected, dragged and edited together, so a plan written by a script with clashing ids
+ * would otherwise behave as if those objects were glued. Returns the same doc if nothing clashed.
+ */
+export function fixIds(doc: Doc): Doc {
+  const seen = new Set<string>();
+  let changed = false;
+  const levels = doc.levels.map((l) => ({
+    ...l,
+    objects: l.objects.map((o) => {
+      if (!seen.has(o.id)) { seen.add(o.id); return o; }
+      changed = true;
+      const id = uid(o.type === "point" ? "pt" : o.type);
+      seen.add(id);
+      return { ...o, id };
+    }),
+  }));
+  return changed ? { ...doc, levels } : doc;
+}
+
 export function mapLevel(doc: Doc, levelId: string, fn: (objs: Obj[]) => Obj[]): Doc {
   return { ...doc, levels: doc.levels.map((l) => (l.id === levelId ? { ...l, objects: fn(l.objects) } : l)) };
 }

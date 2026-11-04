@@ -3,7 +3,7 @@ import { Canvas, addObj, mapObjs, type Tool, type View } from "./Canvas";
 import { Inspector } from "./Inspector";
 import { CATALOG, GROUPS, type CatalogEntry } from "./catalog";
 import { useHistory } from "./history";
-import { MARK_KINDS, KIND_LABEL, blankDoc, isDoc, translate, uid, type Doc, type Item, type MarkKind, type Obj, type Point, type Room, type Vec } from "./model";
+import { MARK_KINDS, KIND_LABEL, blankDoc, fixIds, isDoc, translate, uid, type Doc, type Item, type MarkKind, type Obj, type Point, type Room, type Vec } from "./model";
 import { closetHost, docBounds, polyArea, turnDoor } from "./geometry";
 import { docToSvg, download, parseFile, scaleLevel } from "./svgio";
 import { SNAP_STEPS, fmtArea, parseLen } from "./units";
@@ -44,7 +44,7 @@ const TOOLS: { id: Tool; name: string; key: string; icon: string }[] = [
 
 export default function App({ host }: { host?: Host }) {
   const draft = useMemo(() => (host ? null : load<{ doc: Doc; name: string }>(DRAFT_KEY)), [host]);
-  const hist = useHistory<Doc>(() => (host ? blankDoc() : draft && isDoc(draft.doc) ? draft.doc : sampleDoc()));
+  const hist = useHistory<Doc>(() => (host ? blankDoc() : draft && isDoc(draft.doc) ? fixIds(draft.doc) : sampleDoc()));
   const { doc, commit, live, settle, undo, redo, reset } = hist;
   const [fileName, setFileName] = useState(draft?.name ?? "sample-house.svg");
   const [levelId, setLevelId] = useState(() => doc.levels.find((l) => l.id === "floor1")?.id ?? doc.levels[0].id);
@@ -129,7 +129,7 @@ export default function App({ host }: { host?: Host }) {
       if (r === rev.current || savingRef.current) return;
       const first = rev.current < 0;
       rev.current = r;
-      const base = d && isDoc(d) ? d : blankDoc();
+      const base = d && isDoc(d) ? fixIds(d) : blankDoc();
       if (first) {
         const kept = load<{ rev: number; doc: Doc }>(HOST_DRAFT_KEY);
         const restore = kept && kept.rev === r && isDoc(kept.doc) && JSON.stringify(kept.doc) !== JSON.stringify(base);

@@ -4,7 +4,7 @@
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
-  isDoc, ITEM_KINDS, MARK_KINDS, ROOM_KINDS, uid,
+  fixIds, isDoc, ITEM_KINDS, MARK_KINDS, ROOM_KINDS, uid,
   type Doc, type Item, type ItemKind, type Level, type MarkKind, type Obj, type Point, type PointKind, type Room, type RoomKind, type Vec,
 } from "./model";
 import { bbox, dist, docBounds, mid, pointInPoly, polyArea } from "./geometry";
@@ -51,14 +51,14 @@ export function parseFile(text: string, name: string): Loaded {
   if (name.toLowerCase().endsWith(".json") || t.startsWith("{")) {
     const d = JSON.parse(t);
     if (!isDoc(d)) throw new Error("That JSON file isn't a Home Designer project.");
-    return { doc: d };
+    return { doc: fixIds(d) };
   }
   const dom = new DOMParser().parseFromString(text, "image/svg+xml");
   if (dom.querySelector("parsererror")) throw new Error("That file isn't valid SVG.");
   const meta = dom.getElementById(META_ID);
   if (meta?.textContent) {
     const d = JSON.parse(meta.textContent);
-    if (isDoc(d)) return { doc: d };
+    if (isDoc(d)) return { doc: fixIds(d) };
   }
   return importShapes(dom, name);
 }

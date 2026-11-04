@@ -90,3 +90,18 @@ describe("closetHost", () => {
     expect(closetHost(rect("r", "room", 1, 1, 3, 3), [bed])).toBeNull();
   });
 });
+
+import { fixIds, type Doc } from "../model";
+describe("fixIds", () => {
+  it("gives repeated ids fresh ones and leaves clean plans alone", () => {
+    const pt = (id: string, x: number) => ({ id, type: "point" as const, kind: "sensor" as const, label: "", x, y: 0 });
+    const doc: Doc = { app: "home-designer", version: 1, name: "t", wall: 1,
+      levels: [{ id: "l", title: "L", objects: [pt("a", 0), pt("a", 1), pt("a", 2), pt("b", 3)] }] };
+    const out = fixIds(doc);
+    const ids = out.levels[0].objects.map((o) => o.id);
+    expect(new Set(ids).size).toBe(4);
+    expect(ids[0]).toBe("a");
+    expect(ids[3]).toBe("b");
+    expect(fixIds(out)).toBe(out);
+  });
+});
