@@ -1,6 +1,6 @@
 # Home Designer
 
-**[Try it in your browser →](https://georgestephanis.github.io/home-designer/)** Nothing is uploaded; it all runs locally in the page.
+**[Try it in your browser →](https://georgestephanis.github.io/home-designer/)**
 
 A floor-plan editor that runs entirely in the browser. Draw rooms, doors and windows to real
 measurements, drag furniture around, measure anything, and save the result as an SVG you can open
