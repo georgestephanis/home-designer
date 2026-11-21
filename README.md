@@ -1,5 +1,9 @@
 # Home Designer
 
+> [!TIP]
+> **Look before you build.** [wvw.dev](https://wvw.dev) is a catalog of open-source apps, many of them built with AI.
+> Nothing quite like this one is there yet. Before spending tokens on a new app, search wvw.dev for something you can fork, this repo included.
+
 **[Try it in your browser →](https://georgestephanis.github.io/home-designer/)**
 
 A floor-plan editor that runs entirely in the browser. Draw rooms, doors and windows to real
