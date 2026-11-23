@@ -1,5 +1,14 @@
 # Home Designer
 
+> [!TIP]
+> **Look before you build.** Similar open-source projects:
+>
+> - [openPlan3D](https://github.com/laanlabs/openPlan3D): 2D/3D floor plan editor in the browser, MIT
+> - [Sweet Home 3D](https://www.sweethome3d.com/): desktop interior design app, GPL-2.0
+> - [blueprint3d](https://github.com/furnishup/blueprint3d): browser floor planner, MIT, unmaintained since 2021
+>
+> Before building your own tool, search [AlternativeTo](https://alternativeto.net) (filter to open source), [GitHub](https://github.com/search?type=repositories) and [wvw.dev](https://wvw.dev) for something to fork, this repo included.
+
 **[Try it in your browser →](https://georgestephanis.github.io/home-designer/)**
 
 A floor-plan editor that runs entirely in the browser. Draw rooms, doors and windows to real
